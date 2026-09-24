@@ -2,12 +2,22 @@ namespace VideoCall.Shared.Messages;
 
 public enum MessageType
 {
-    // Issue #3: ÅÑÓÇá ØáÈ ãßÇáãÉ ÎÇÕÉ ÚÈÑ ŞäÇÉ TCP.
+    // Issue #3: TCP
     CallRequest,
 
-    // Issue #3: ÅÔÚÇÑ ÇáÚãíá ÈÇäÊåÇÁ ãÏÉ ÇäÊÙÇÑ ÇáÑÏ.
+    // Issue #3: .
     CallTimedOut,
 
-    // Issue #3: ÅÔÚÇÑ ÇáÚãíá ÈİÔá ØáÈ ÇáãßÇáãÉ.
-    CallError
+    // Issue #3: .
+    CallError,
+
+    // Issue #2: Display list of online users
+    OnlineUsersUpdate,
+
+    // Issue #5: Toggle camera on/off
+    StopConversationMedia,
+    StartConversationMedia,
+
+    // Issue #7: End an ongoing call
+    CallEnded
 }
