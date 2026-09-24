@@ -9,8 +9,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\VideoCall.Shared\VideoCall.Shared.csproj" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\VideoCall.Shared\VideoCall.Shared.csproj" />
   </ItemGroup>
 
 </Project>

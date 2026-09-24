@@ -1,38 +1,19 @@
 namespace VideoCall.Shared.Messages;
 
-/// íÍÏÏ ÌãíÚ ÃäæÇÚ ÇáÑÓÇÆá ÇáãÊÈÇÏáÉ Èíä ÇáÚãíá æÇáÎÇÏã ÚÈÑ ÇáÔÈßÉ (TCP).
-/// ßá äæÚ íÑÇİŞå ßÇÆä (Payload) íÍãá ÇáÈíÇäÇÊ ÇáÎÇÕÉ Èå.
 public enum MessageType
 {
-    // === ŞÓã ÇáãÕÇÏŞÉ æÊÓÌíá ÇáÏÎæá (ÇáĞí äÚãá Úáíå ÍÇáíÇğ) ===
+    // === Issue #1: ÇáãÕÇÏŞÉ æÊÓÌíá ÇáÏÎæá (ÇáÎÇÕÉ Èß) ===
     LoginRequest,
     LoginResponse,
-    // === ÍÇáÉ ÇáãÓÊÎÏãíä (ÊÍÏíË ŞÇÆãÉ ÇáãÊÕáíä) ===
-    OnlineUsersUpdate,
-    // === ÅÏÇÑÉ ÇáãßÇáãÇÊ (ØáÈ¡ ŞÈæá¡ ÑİÖ¡ ÅäåÇÁ) ===
-    CallRequest,
-    CallAccepted,
-    CallRejected,
-    CallEnded,
-    CallTimedOut,
-    CallError,
-    // === ÅÏÇÑÉ ÇáÛÑİ ÇáÌãÇÚíÉ æÇáÏÚæÇÊ ===
-    CreateRoomRequest,
-    AddUserToRoomRequest,
-    JoinRoomRequest,
-    LeaveRoomRequest,
-    RoomUpdate,
-    RoomError,
-    StartRoomMedia,
-    StopRoomMedia,
-    RoomMediaStarted,
-    RoomMediaStopped,
-    RoomInvite,
-    RoomInviteAccepted,
-    RoomInviteRejected,
-    // === ÇáÃÎØÇÁ æÇáÑÓÇÆá ÇáÚÇãÉ ááäÙÇã ===
+
+    // === ÇáÃÎØÇÁ æÇáÑÓÇÆá ÇáÚÇãÉ ááäÙÇã (ÇáÎÇÕÉ Èß) ===
     Error,
     Disconnect,
-    StopConversationMedia,
-    StartConversationMedia
+    // Issue #3: ÅÑÓÇá ØáÈ ãßÇáãÉ ÎÇÕÉ ÚÈÑ ŞäÇÉ TCP.
+    CallRequest,
+    // Issue #3: ÅÔÚÇÑ ÇáÚãíá ÈÇäÊåÇÁ ãÏÉ ÇäÊÙÇÑ ÇáÑÏ.
+    CallTimedOut,
+
+    // Issue #3: ÅÔÚÇÑ ÇáÚãíá ÈİÔá ØáÈ ÇáãßÇáãÉ.
+    CallError
 }
