@@ -106,11 +106,7 @@ public sealed class ProtocolRouter
     }
 
     // يعتمد Issue #3 على SendAsync الموجودة في كود جلسة الخادم.
-    private static Task SendErrorAsync(
-        IClientHandler session,
-        string errorCode,
-        string message,
-        CancellationToken ct)
+    private static Task SendErrorAsync(IClientHandler session,string errorCode,string message,CancellationToken ct)
     {
         return session.SendAsync(
             Message.Create(
