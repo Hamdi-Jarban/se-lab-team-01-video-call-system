@@ -20,4 +20,18 @@ public enum MessageType
 
     // Issue #7: End an ongoing call
     CallEnded
+    // === Issue #1: �������� ������ ������ (������ ��) ===
+    LoginRequest,
+    LoginResponse,
+
+    // === ������� �������� ������ ������ (������ ��) ===
+    Error,
+    Disconnect,
+    // Issue #3: ����� ��� ������ ���� ��� ���� TCP.
+    CallRequest,
+    // Issue #3: ����� ������ ������� ��� ������ ����.
+    CallTimedOut,
+
+    // Issue #3: ����� ������ ���� ��� ��������.
+    CallError
 }
