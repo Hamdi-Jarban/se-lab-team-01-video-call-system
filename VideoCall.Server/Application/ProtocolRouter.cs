@@ -1,198 +1,121 @@
-using System.Collections.Concurrent;
-using System.Windows;
-using System.Windows.Input;
-using System.Windows.Media.Imaging;
-using VideoCall.Client.Media;
-using VideoCall.Client.Services;
+using VideoCall.Server.Domain;
+using VideoCall.Server.Domain.Repositories;
 using VideoCall.Shared.Messages;
-using VideoCall.Shared.Networking;
-using VideoCall.Client.Contracts;
 
-namespace VideoCall.Client.ViewModels;
+namespace VideoCall.Server.Application;
 
-public sealed class CallViewModel : ViewModelBase, IDisposable
+public sealed class ProtocolRouter
 {
-    private readonly INetworkClient _network;
-    private readonly string _serverHost;
-    private readonly Guid _callId;
-    private readonly CancellationTokenSource _stop = new();
-    private readonly VideoFrameReassembler _reassembler = new();
-    private readonly AudioChunkReassembler _audioReassembler = new();
-    private readonly ConcurrentBag<Task> _sendTasks = new();
-    private IMediaTransport? _udp;
-    private AudioCaptureService? _audioCapture;
-    private AudioPlaybackService? _audioPlayback;
-    private VideoCaptureService? _videoCapture;
-    private BitmapSource? _localVideo;
-    private BitmapSource? _remoteVideo;
-    private bool _isMuted;
-    private bool _isCameraOn = true;
-    private string _stateText = "جارٍ الاتصال...";
-    private int _mediaStarted;
-    private int _closed;
+    private readonly IUserPresenceRepository _presence;
+    private readonly IConversationRepository _conversations;
 
-    public string OtherParty { get; }
-    public BitmapSource? LocalVideo { get => _localVideo; private set => SetField(ref _localVideo, value); }
-    public BitmapSource? RemoteVideo { get => _remoteVideo; private set => SetField(ref _remoteVideo, value); }
-    public bool IsMuted { get => _isMuted; private set => SetField(ref _isMuted, value); }
-    public bool IsCameraOn { get => _isCameraOn; private set => SetField(ref _isCameraOn, value); }
-    public string StateText { get => _stateText; private set => SetField(ref _stateText, value); }
+    // Issue #3 يعتمد على SendAsync وSendToUserAsync
+    // الموجودتين في كود الاتصال الأساسي للخادم.
+    private readonly Func<string, Message, CancellationToken, Task> _sendToUserAsync;
 
-    public ICommand ToggleMuteCommand { get; }
-    public ICommand ToggleCameraCommand { get; }
-    public ICommand EndCallCommand { get; }
-    public event Action? CallClosed;
-
-    public CallViewModel(INetworkClient network, string serverHost, string otherParty, Guid callId)
+    public ProtocolRouter(
+        IUserPresenceRepository presence,
+        IConversationRepository conversations,
+        Func<string, Message, CancellationToken, Task> sendToUserAsync)
     {
-        _network = network ?? throw new ArgumentNullException(nameof(network));
-        _serverHost = serverHost ?? throw new ArgumentNullException(nameof(serverHost));
-        _callId = callId;
-        OtherParty = otherParty?.Trim() ?? throw new ArgumentNullException(nameof(otherParty));
-        ToggleMuteCommand = new RelayCommand(ToggleMute);
-        ToggleCameraCommand = new RelayCommand(ToggleCamera);
-        EndCallCommand = new AsyncCommand(EndCallAsync);
-        _network.CallAccepted += OnCallAccepted;
-        _network.CallEnded += OnCallEnded;
-        _network.RoomMediaStarted += OnMediaStarted;
-        _network.Disconnected += OnDisconnected;
+        _presence = presence;
+        _conversations = conversations;
+        _sendToUserAsync = sendToUserAsync;
     }
 
-    private void OnCallAccepted(CallAcceptedPayload payload)
+    /// <summary>
+    /// Issue #3: توجيه CallRequest إلى منطق إرسال طلب المكالمة.
+    /// </summary>
+    public async Task DispatchCallRequestAsync(
+        IClientHandler session,
+        CallRequestPayload? request,
+        CancellationToken ct)
     {
-        if (payload.CallId != _callId) return;
-        RunOnUi(() => StateText = "تم قبول الاتصال، جاري تشغيل الوسائط...");
-    }
-
-    private void OnMediaStarted(RoomMediaPayload payload)
-    {
-        if (!string.Equals(payload.RoomId, _callId.ToString("N"), StringComparison.OrdinalIgnoreCase)) return;
-        if (payload.MediaId == Guid.Empty || Interlocked.Exchange(ref _mediaStarted, 1) != 0) return;
-        RunOnUi(() => StateText = "متصل");
-        StartMediaPipeline(payload.MediaId);
-    }
-
-    private void StartMediaPipeline(Guid mediaId)
-    {
-        if (_network.SessionToken is not { } token || string.IsNullOrWhiteSpace(_network.Username))
+        if (!session.IsAuthenticated ||
+            string.IsNullOrWhiteSpace(session.Username) ||
+            request is null)
         {
-            RunOnUi(() => StateText = "جلسة المستخدم غير صالحة");
             return;
         }
 
-        try
+        var caller = session.Username;
+        var callee = request.Callee?.Trim();
+
+        if (string.IsNullOrWhiteSpace(callee) ||
+            caller.Equals(
+                callee,
+                StringComparison.OrdinalIgnoreCase))
         {
-            _udp = new UdpMediaClient(_serverHost, token, mediaId, _network.Username);
-            _udp.AudioPacketReceived += packet =>
-            {
-                var complete = _audioReassembler.Accept(packet);
-                if (complete is not null) _audioPlayback?.Enqueue(complete);
-            };
-            _udp.VideoPacketReceived += OnRemoteVideo;
-            _udp.TransportError += ex => RunOnUi(() => StateText = $"خطأ UDP: {ex.Message}");
-            _udp.Start();
-
-            _audioPlayback = new AudioPlaybackService();
-            // Pass the playback's reference buffer in so captured mic audio
-            // has the speaker's own output subtracted out (echo cancellation).
-            _audioCapture = new AudioCaptureService(_audioPlayback.EchoReference) { IsMuted = IsMuted };
-            _audioCapture.ChunkCaptured += chunk => TrackSend(_udp.SendAudioAsync(chunk, _stop.Token));
-            _audioCapture.Start();
-
-            _videoCapture = new VideoCaptureService();
-            _videoCapture.FrameCaptured += OnLocalFrame;
-            _videoCapture.Start();
+            return;
         }
-        catch (Exception ex)
+
+        // Issue #3 يعتمد على خدمة Presence لمعرفة المستخدمين المتصلين.
+        if (!_presence.IsOnline(callee))
         {
-            RunOnUi(() => StateText = $"تعذر تشغيل الكاميرا/الصوت: {ex.Message}");
+            await SendErrorAsync(
+                session,
+                ErrorCodes.TargetOffline,
+                "The target user is offline.",
+                ct);
+
+            return;
         }
-    }
 
-    private void OnLocalFrame(byte[] encodedFrame, byte[] preview)
-    {
-        if (!IsCameraOn) return;
-        RunOnUi(() =>
+        var callId = Guid.NewGuid();
+
+        var result = _conversations.CreatePrivate(
+            callId.ToString("N"),
+            caller,
+            callee,
+            out _);
+
+        if (result == ConversationOperation.Busy)
         {
-            try { LocalVideo = FrameCodec.BytesToBitmapSource(preview); }
-            catch { }
-        });
-        if (_udp is not null) TrackSend(_udp.SendVideoFrameAsync(encodedFrame, _stop.Token));
-    }
+            await SendErrorAsync(
+                session,
+                ErrorCodes.TargetBusy,
+                "The target user is busy.",
+                ct);
 
-    private void OnRemoteVideo(MediaPacket packet)
-    {
-        var complete = _reassembler.Accept(packet);
-        if (complete is null) return;
-        RunOnUi(() =>
-        {
-            try { RemoteVideo = FrameCodec.BytesToBitmapSource(complete); }
-            catch { }
-        });
-    }
-
-    private void ToggleMute()
-    {
-        IsMuted = !IsMuted;
-        if (_audioCapture is not null) _audioCapture.IsMuted = IsMuted;
-    }
-
-    private void ToggleCamera()
-    {
-        IsCameraOn = !IsCameraOn;
-        _videoCapture?.SetCameraOn(IsCameraOn);
-        if (!IsCameraOn) LocalVideo = null;
-    }
-
-    private void OnCallEnded(CallEndedPayload payload)
-    {
-        if (payload.CallId != _callId) return;
-        RunOnUi(() => _ = CloseAsync("انتهت المكالمة"));
-    }
-
-    private void OnDisconnected() => RunOnUi(() => _ = CloseAsync("انقطع الاتصال بالخادم"));
-
-    private async Task EndCallAsync()
-    {
-        if (_callId != Guid.Empty)
-        {
-            try { await _network.EndCallAsync(_callId).ConfigureAwait(false); } catch { }
+            return;
         }
-        await CloseAsync("انتهت المكالمة").ConfigureAwait(false);
+
+        if (result != ConversationOperation.Success)
+        {
+            await SendErrorAsync(
+                session,
+                ErrorCodes.UnexpectedError,
+                "The call request could not be created.",
+                ct);
+
+            return;
+        }
+
+        var message = Message.Create(
+            MessageType.CallRequest,
+            new CallRequestPayload(
+                callId,
+                caller,
+                callee));
+
+        // Issue #3: إرسال الطلب إلى المستخدم المستهدف.
+        await _sendToUserAsync(callee, message, ct);
+
+        // Issue #3: إعادة الطلب إلى المرسل مع CallId الحقيقي.
+        await _sendToUserAsync(caller, message, ct);
     }
 
-    private async Task CloseAsync(string message)
+    // يعتمد Issue #3 على SendAsync الموجودة في كود جلسة الخادم.
+    private static Task SendErrorAsync(
+        IClientHandler session,
+        string errorCode,
+        string message,
+        CancellationToken ct)
     {
-        if (Interlocked.Exchange(ref _closed, 1) != 0) return;
-        RunOnUi(() => StateText = message);
-        _stop.Cancel();
-        // Stop producers first; otherwise a capture callback may enqueue a new
-        // send while the shutdown code is waiting for the old sends.
-        _videoCapture?.Dispose();
-        _audioCapture?.Dispose();
-        try { await Task.WhenAll(_sendTasks.ToArray()).ConfigureAwait(false); } catch (OperationCanceledException) { }
-        _audioPlayback?.Dispose();
-        _udp?.Dispose();
-        _network.CallAccepted -= OnCallAccepted;
-        _network.CallEnded -= OnCallEnded;
-        _network.RoomMediaStarted -= OnMediaStarted;
-        _network.Disconnected -= OnDisconnected;
-        CallClosed?.Invoke();
-    }
-
-    private void TrackSend(Task task) => _sendTasks.Add(task);
-
-    // Safe to block on: every awaited step in CloseAsync uses ConfigureAwait(false),
-    // so its continuations run on the thread pool and never need to resume on this
-    // (UI) thread. That's what avoids the classic WPF dispatcher deadlock.
-    public void Dispose() => CloseAsync("تم إغلاق المكالمة").GetAwaiter().GetResult();
-
-    public Task DisposeAsync() => CloseAsync("تم إغلاق المكالمة");
-
-    private static void RunOnUi(Action action)
-    {
-        var dispatcher = Application.Current?.Dispatcher;
-        if (dispatcher is null || dispatcher.CheckAccess()) action();
-        else dispatcher.BeginInvoke(action);
+        return session.SendAsync(
+            Message.Create(
+                MessageType.CallError,
+                new ErrorPayload(errorCode, message)),
+            ct);
     }
 }

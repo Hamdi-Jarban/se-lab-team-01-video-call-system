@@ -3,46 +3,41 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="VideoCallSystem" Width="560" Height="620"
         WindowStartupLocation="CenterScreen">
-    <Grid Margin="22">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
+    <!-- Issue #3:
+     يعتمد هذا الجزء على OnlineUsers التي يوفرها كود قائمة المستخدمين. -->
+    <ListBox ItemsSource="{Binding OnlineUsers}">
+        <ListBox.ItemTemplate>
+            <DataTemplate>
+                <Grid Margin="0,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-        <DockPanel Grid.Row="0" Margin="0,0,0,8">
-            <TextBlock Text="VideoCallSystem" Style="{StaticResource TitleText}" DockPanel.Dock="Right" />
-            <TextBlock Text="{Binding ConnectionStatus}" Foreground="#94A3B8" Margin="18,8,0,0" />
-        </DockPanel>
-        <TextBlock Grid.Row="1" Text="{Binding CurrentUsername, StringFormat='مسجل الدخول: {0}'}"
-                   Foreground="#CBD5E1" Margin="0,0,0,12" />
+                    <TextBlock
+                    Text="{Binding}"
+                    VerticalAlignment="Center" />
 
-        <Border Grid.Row="2" Style="{StaticResource Panel}">
-            <DockPanel>
-                <TextBlock Text="المستخدمون المتصلون" Style="{StaticResource FieldLabel}" DockPanel.Dock="Top" />
-                <ListBox ItemsSource="{Binding OnlineUsers}" Background="Transparent" BorderThickness="0">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <Grid Margin="0,5">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="{Binding}" Foreground="#F8FAFC" VerticalAlignment="Center" />
-                                <Button Grid.Column="1" Content="اتصال خاص" Style="{StaticResource PrimaryButton}"
-                                        Tag="{Binding}" Click="Call_Click" />
-                            </Grid>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-            </DockPanel>
-        </Border>
+                    <!-- Issue #3:
+                     زر إرسال طلب مكالمة للمستخدم المحدد. -->
+                    <Button
+                    Grid.Column="1"
+                    Content="اتصال خاص"
+                    Tag="{Binding}"
+                    Click="Call_Click"
+                    IsEnabled="{Binding
+                        DataContext.IsCallRequestPending,
+                        RelativeSource={RelativeSource AncestorType=Window},
+                        Converter={StaticResource InverseBooleanConverter}}" />
+                </Grid>
+            </DataTemplate>
+        </ListBox.ItemTemplate>
+    </ListBox>
 
-        <TextBlock Grid.Row="3" Text="{Binding Status}" Foreground="#FCA5A5" TextWrapping="Wrap" Margin="0,8,0,66" />
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
-            <Button Content="الغرف الجماعية" Style="{StaticResource SecondaryButton}" Click="Rooms_Click" />
-            <Button Content="تسجيل الخروج" Style="{StaticResource DangerButton}" Click="Logout_Click" />
-        </StackPanel>
-    </Grid>
+    <!-- Issue #3:
+     يعتمد على Status الموجود في MainViewModel لعرض حالة الانتظار أو الخطأ. -->
+    <TextBlock
+    Text="{Binding Status}"
+    TextWrapping="Wrap" />
+
 </Window>

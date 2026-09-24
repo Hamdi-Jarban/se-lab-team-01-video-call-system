@@ -1,45 +1,13 @@
 namespace VideoCall.Shared.Messages;
 
-/// <summary>
-/// Every kind of message that can travel over the TCP control channel.
-/// The Message envelope carries one of these plus a JSON payload whose
-/// shape depends on the type (see the matching *Payload record below).
-/// </summary>
 public enum MessageType
 {
-    // Auth
-    LoginRequest,
-    LoginResponse,
-
-    // Presence
-    OnlineUsersUpdate,
-
-    // Call signaling
+    // Issue #3: ≈—”«· ÿ·» „ﬂ«·„… Œ«’… ⁄»— ﬁ‰«… TCP.
     CallRequest,
-    CallAccepted,
-    CallRejected,
-    CallEnded,
+
+    // Issue #3: ≈‘⁄«— «·⁄„Ì· »«‰ Â«¡ „œ… «‰ Ÿ«— «·—œ.
     CallTimedOut,
-    CallError,
 
-    // Rooms
-    CreateRoomRequest,
-    AddUserToRoomRequest,
-    JoinRoomRequest,
-    LeaveRoomRequest,
-    RoomUpdate,
-    RoomError,
-    StartRoomMedia,
-    StopRoomMedia,
-    RoomMediaStarted,
-    RoomMediaStopped,
-    RoomInvite,
-    RoomInviteAccepted,
-    RoomInviteRejected,
-
-    // Generic
-    Error,
-    Disconnect,
-    StopConversationMedia,
-    StartConversationMedia
+    // Issue #3: ≈‘⁄«— «·⁄„Ì· »›‘· ÿ·» «·„ﬂ«·„….
+    CallError
 }
