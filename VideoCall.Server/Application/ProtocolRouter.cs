@@ -26,9 +26,7 @@ public sealed class ProtocolRouter
     /// <summary>
     /// Issue #3: توجيه CallRequest إلى منطق إرسال طلب المكالمة.
     /// </summary>
-    public async Task DispatchCallRequestAsync(
-        IClientHandler session,
-        CallRequestPayload? request,
+    public async Task DispatchCallRequestAsync( IClientHandler session,CallRequestPayload? request,
         CancellationToken ct)
     {
         if (!session.IsAuthenticated ||
