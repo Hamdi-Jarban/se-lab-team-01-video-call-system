@@ -1,0 +1,7 @@
+**/bin/
+**/obj/
+*.slnLaunch.user
+.vs/
+**/bin/
+**/obj/
+*.slnLaunch.user
