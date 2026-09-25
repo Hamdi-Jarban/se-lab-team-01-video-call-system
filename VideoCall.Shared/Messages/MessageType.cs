@@ -19,7 +19,7 @@ public enum MessageType
     StartConversationMedia,
 
     // Issue #7: End an ongoing call
-    CallEnded
+    CallEnded,
     // === Issue #1: �������� ������ ������ (������ ��) ===
     LoginRequest,
     LoginResponse,
@@ -28,10 +28,6 @@ public enum MessageType
     Error,
     Disconnect,
     // Issue #3: ����� ��� ������ ���� ��� ���� TCP.
-    CallRequest,
-    // Issue #3: ����� ������ ������� ��� ������ ����.
-    CallTimedOut,
 
-    // Issue #3: ����� ������ ���� ��� ��������.
-    CallError
+  
 }
