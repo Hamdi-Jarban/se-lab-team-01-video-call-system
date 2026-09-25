@@ -1,0 +1,64 @@
+using System.Globalization;
+using System.Windows;
+using System.Windows.Data;
+
+namespace VideoCall.Client.Views;
+
+/// <summary>
+/// ›∆«  „”«⁄œ… (Converters)  ı” Œœ„ ›Ì XAML · ÕÊÌ· «·»Ì«‰«  „‰ «·‹ ViewModel 
+/// ≈·Ï ’Ì€  ›Â„Â« Ê«ÃÂ… «·„” Œœ„ („À·  ÕÊÌ· «·ﬁÌ„ «·„‰ÿﬁÌ… ≈·Ï „—∆Ì/„Œ›Ì).
+/// </summary>
+public sealed class BooleanToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is bool flag && flag ? Visibility.Visible : Visibility.Collapsed;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is Visibility visibility && visibility == Visibility.Visible;
+}
+
+public sealed class InverseBooleanConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is bool flag && !flag;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is bool flag && !flag;
+}
+
+public sealed class InverseBooleanToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is bool flag && !flag ? Visibility.Visible : Visibility.Collapsed;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
+public sealed class NullToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is null ? Visibility.Visible : Visibility.Collapsed;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
+// „ÕÊ·«  „Œ’’… · ÕœÌÀ ‰’Ê’ √“—«— «· Õﬂ„ ›Ì «·„ﬂ«·„… œÌ‰«„ÌﬂÌ« »«··€… «·⁄—»Ì…
+public sealed class MuteLabelConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is true ? "≈·€«¡ «·ﬂ „" : "ﬂ „ «·’Ê ";
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
+public sealed class CameraLabelConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is true ? "≈Ìﬁ«› «·ﬂ«„Ì—«" : " ‘€Ì· «·ﬂ«„Ì—«";
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
