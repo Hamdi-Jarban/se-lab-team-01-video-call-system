@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("VideoCall.Shared")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e3d082d7fa74acc49c04a3808ae750eaeceef06b")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
 [assembly: System.Reflection.AssemblyProductAttribute("VideoCall.Shared")]
 [assembly: System.Reflection.AssemblyTitleAttribute("VideoCall.Shared")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

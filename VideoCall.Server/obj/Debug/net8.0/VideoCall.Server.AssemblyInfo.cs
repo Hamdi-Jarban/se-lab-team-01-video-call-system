@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("VideoCall.Server")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2a0db1fb208c084f11e3bbffff5e6082c297f386")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
 [assembly: System.Reflection.AssemblyProductAttribute("VideoCall.Server")]
 [assembly: System.Reflection.AssemblyTitleAttribute("VideoCall.Server")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
