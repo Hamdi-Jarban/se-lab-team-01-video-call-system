@@ -1,7 +1,16 @@
+# ملفات البناء
 **/bin/
 **/obj/
-*.slnLaunch.user
+
+# إعدادات Visual Studio المحلية
 .vs/
-**/bin/
-**/obj/
+*.suo
+*.user
+*.userosscache
 *.slnLaunch.user
+
+# نتائج الاختبارات
+TestResults/
+
+.DS_Store
+Thumbs.db

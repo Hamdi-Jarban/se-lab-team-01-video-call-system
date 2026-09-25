@@ -2,18 +2,32 @@ namespace VideoCall.Shared.Messages;
 
 public enum MessageType
 {
-    // === Issue #1: ÇáãÕÇÏŞÉ æÊÓÌíá ÇáÏÎæá (ÇáÎÇÕÉ Èß) ===
+    // Issue #3: TCP
+    CallRequest,
+
+    // Issue #3: .
+    CallTimedOut,
+
+    // Issue #3: .
+    CallError,
+
+    // Issue #2: Display list of online users
+    OnlineUsersUpdate,
+
+    // Issue #5: Toggle camera on/off
+    StopConversationMedia,
+    StartConversationMedia,
+
+    // Issue #7: End an ongoing call
+    CallEnded,
+    // === Issue #1: ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½) ===
     LoginRequest,
     LoginResponse,
 
-    // === ÇáÃÎØÇÁ æÇáÑÓÇÆá ÇáÚÇãÉ ááäÙÇã (ÇáÎÇÕÉ Èß) ===
+    // === ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½) ===
     Error,
     Disconnect,
-    // Issue #3: ÅÑÓÇá ØáÈ ãßÇáãÉ ÎÇÕÉ ÚÈÑ ŞäÇÉ TCP.
-    CallRequest,
-    // Issue #3: ÅÔÚÇÑ ÇáÚãíá ÈÇäÊåÇÁ ãÏÉ ÇäÊÙÇÑ ÇáÑÏ.
-    CallTimedOut,
+    // Issue #3: ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ TCP.
 
-    // Issue #3: ÅÔÚÇÑ ÇáÚãíá ÈİÔá ØáÈ ÇáãßÇáãÉ.
-    CallError
+  
 }
