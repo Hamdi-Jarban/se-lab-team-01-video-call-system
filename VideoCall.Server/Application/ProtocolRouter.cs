@@ -26,9 +26,7 @@ public sealed class ProtocolRouter
     /// <summary>
     /// Issue #3: توجيه CallRequest إلى منطق إرسال طلب المكالمة.
     /// </summary>
-    public async Task DispatchCallRequestAsync(
-        IClientHandler session,
-        CallRequestPayload? request,
+    public async Task DispatchCallRequestAsync( IClientHandler session,CallRequestPayload? request,
         CancellationToken ct)
     {
         if (!session.IsAuthenticated ||
@@ -106,11 +104,7 @@ public sealed class ProtocolRouter
     }
 
     // يعتمد Issue #3 على SendAsync الموجودة في كود جلسة الخادم.
-    private static Task SendErrorAsync(
-        IClientHandler session,
-        string errorCode,
-        string message,
-        CancellationToken ct)
+    private static Task SendErrorAsync(IClientHandler session,string errorCode,string message,CancellationToken ct)
     {
         return session.SendAsync(
             Message.Create(
