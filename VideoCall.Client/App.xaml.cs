@@ -4,27 +4,26 @@ using VideoCall.Client.Views;
 
 namespace VideoCall.Client;
 
-/// <summary>
-/// The WPF client's composition root. This is the only class in the client
-/// project allowed to call <c>new NetworkClient()</c> - every other class
-/// (ViewModels, Windows) is handed the resulting object through its
-/// constructor typed as <see cref="Contracts.INetworkClient"/>. See
-/// <see cref="Contracts.INetworkClient"/> for why (Dependency Inversion
-/// Principle / testability).
-/// </summary>
+/// ‰ﬁÿ… «·»œ«Ì… · ÿ»Ìﬁ «·⁄„Ì· (Composition Root). 
+/// Â–« ÂÊ «·„ﬂ«‰ «·ÊÕÌœ «·„”„ÊÕ ›ÌÂ »≈‰‘«¡ ﬂ«∆‰ NetworkClient „»«‘—… (new NetworkClient).
+/// Ì „  „—Ì— Â–« «·ﬂ«∆‰ ··Ê«ÃÂ«  (ViewModels) ⁄»— Ê«ÃÂ… INetworkClient · ÕﬁÌﬁ „»œ√ Dependency Inversion.
 public partial class App : Application
 {
     private NetworkClient? _network;
 
+    //  ı” œ⁄Ï Â–Â «·œ«·…  ·ﬁ«∆Ì« ⁄‰œ  ‘€Ì· «· ÿ»Ìﬁ
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        
+        //  ÂÌ∆… «·« ’«· «·‘»ﬂÌ Ê› Õ ‰«›–…  ”ÃÌ· «·œŒÊ· ﬂ√Ê· ‘«‘…
         _network = new NetworkClient();
         var login = new LoginWindow(_network);
         MainWindow = login;
         login.Show();
     }
 
+    // œ«·… ··«‰ ﬁ«· ≈·Ï «·‘«‘… «·—∆Ì”Ì… (‘«‘… «·€—›) »⁄œ ‰Ã«Õ  ”ÃÌ· «·œŒÊ·
     public void ShowMainWindow()
     {
         if (_network is null) return;
@@ -33,14 +32,16 @@ public partial class App : Application
         main.Show();
     }
 
+    //  ı” œ⁄Ï Â–Â «·œ«·… ⁄‰œ ≈€·«ﬁ «· ÿ»Ìﬁ · ‰ŸÌ› «·„Ê«—œ
     protected override void OnExit(ExitEventArgs e)
     {
-        // Close child windows first so camera, microphone, UDP and capture loops
-        // are disposed before the TCP client is released.
+        // ≈€·«ﬁ Ã„Ì⁄ «·‰Ê«›– «·›—⁄Ì… ·÷„«‰ ≈Ìﬁ«› «·ﬂ«„Ì—«° «·„Ìﬂ—Ê›Ê‰° ÊŒœ„«  UDP
         foreach (var window in Windows.OfType<Window>().ToArray())
         {
             try { window.Close(); } catch { }
         }
+        
+        // ≈€·«ﬁ « ’«· TCP Ê Õ—Ì— „Ê«—œÂ
         _network?.Dispose();
         base.OnExit(e);
     }

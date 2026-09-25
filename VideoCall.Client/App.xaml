@@ -3,17 +3,23 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:views="clr-namespace:VideoCall.Client.Views"
 >
-    <Application.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="/VideoCall.Client;component/Views/Theme.xaml" />
-            </ResourceDictionary.MergedDictionaries>
-            <views:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
-            <views:InverseBooleanConverter x:Key="InverseBooleanConverter" />
-            <views:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" />
-            <views:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
-            <views:MuteLabelConverter x:Key="MuteLabelConverter" />
-            <views:CameraLabelConverter x:Key="CameraLabelConverter" />
-        </ResourceDictionary>
-    </Application.Resources>
+	<!-- الموارد المشتركة على مستوى التطبيق بالكامل -->
+	<Application.Resources>
+		<ResourceDictionary>
+			<!-- دمج ملف التصميم الأساسي (Theme) والألوان -->
+			<ResourceDictionary.MergedDictionaries>
+				<ResourceDictionary Source="/VideoCall.Client;component/Views/Theme.xaml" />
+			</ResourceDictionary.MergedDictionaries>
+
+			<!-- تعريف المحولات (Converters) لربط البيانات بالواجهة (MVVM) -->
+			<views:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+			<views:InverseBooleanConverter x:Key="InverseBooleanConverter" />
+			<views:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" />
+			<views:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
+
+			<!-- محولات مخصصة لحالة أزرار الكاميرا والميكروفون -->
+			<views:MuteLabelConverter x:Key="MuteLabelConverter" />
+			<views:CameraLabelConverter x:Key="CameraLabelConverter" />
+		</ResourceDictionary>
+	</Application.Resources>
 </Application>
