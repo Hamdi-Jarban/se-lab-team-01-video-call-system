@@ -1,109 +1,254 @@
-﻿using VideoCall.Client.Contracts;
+﻿using System.Net.Sockets;
+using System.Windows;
+using VideoCall.Client.Contracts;
 using VideoCall.Shared.Messages;
+using VideoCall.Shared.Networking;
 
 namespace VideoCall.Client.Services;
 
-public partial class NetworkClient : INetworkClient
+/// تنفيذ عقد عميل الشبكة: إدارة اتصال TCP، قراءة الرسائل في الخلفية، وتحويل الأحداث لخيط واجهة المستخدم.
+public class NetworkClient : INetworkClient
 {
-    // Issue #3 يعتمد على بيانات المستخدم التي يحددها كود تسجيل الدخول.
+    private TcpClient? _tcpClient;
+    private TcpMessageReaderWriter? _framing;
+    private CancellationTokenSource? _cts;
+
     public string? Username { get; private set; }
+    public Guid? SessionToken { get; private set; }
+    public string? ServerHost { get; private set; }
+    public bool IsConnected => _tcpClient?.Connected ?? false;
 
-    // Issue #3 يعتمد على حالة الاتصال التي يديرها كود TCP الأساسي.
-    public bool IsConnected { get; private set; }
-
-    // Issue #3: يصل هذا الحدث عند وصول CallRequest من الخادم.
+    // الأحداث البرمجية لتنبيه الواجهة عند استقبال رسائل أو تغيرات حالة الاتصال
+    public event Action? Disconnected;
+    public event Action<LoginResponsePayload>? LoginResponseReceived;
+    public event Action<OnlineUsersUpdatePayload>? OnlineUsersUpdated;
     public event Action<CallRequestPayload>? IncomingCall;
-
-    // Issue #3: يصل هذا الحدث عند انتهاء مهلة طلب المكالمة.
+    public event Action<CallAcceptedPayload>? CallAccepted;
+    public event Action<CallRejectedPayload>? CallRejected;
+    public event Action<CallEndedPayload>? CallEnded;
     public event Action<CallTimedOutPayload>? CallTimedOut;
-
-    // Issue #3: يصل هذا الحدث عند فشل طلب المكالمة.
     public event Action<ErrorPayload>? CallError;
+    public event Action<ErrorPayload>? ErrorReceived;
+    public event Action<RoomUpdatePayload>? RoomUpdated;
+    public event Action<RoomErrorPayload>? RoomError;
+    public event Action<RoomMediaPayload>? RoomMediaStarted;
+    public event Action<RoomMediaPayload>? RoomMediaStopped;
+    public event Action<RoomInvitePayload>? RoomInviteReceived;
+    public event Action<RoomInviteAcceptedPayload>? RoomInviteAccepted;
+    public event Action<RoomInviteRejectedPayload>? RoomInviteRejected;
 
-    // Issue #3: إرسال طلب المكالمة باستخدام طريقة SendAsync التي سيضيفها عضو الشبكة.
-    public Task RequestCallAsync(string callee)
+    /// الاتصال بخادم التحكم عبر بروتوكول TCP وبدء حلقة الاستماع الخلفية.
+    public async Task<bool> ConnectAsync(string host)
     {
-        if (!IsConnected)
+        try
         {
-            return Task.CompletedTask;
+            _disconnectedRaised = false;
+            _tcpClient = new TcpClient();
+            await _tcpClient.ConnectAsync(host, NetworkConfig.TcpControlPort);
+            ServerHost = host;
+            _framing = new TcpMessageReaderWriter(_tcpClient.GetStream());
+            _cts = new CancellationTokenSource();
+            _ = ReadLoopAsync(_cts.Token);
+            return true;
         }
-
-        if (string.IsNullOrWhiteSpace(callee))
+        catch (Exception)
         {
-            return Task.CompletedTask;
+            return false;
         }
-
-        var payload = new CallRequestPayload(
-            Guid.Empty,
-            Username ?? string.Empty,
-            callee.Trim());
-
-        var message = Message.Create(
-            MessageType.CallRequest,
-            payload);
-
-        // يعتمد هذا السطر على SendAsync الموجود في كود NetworkClient الأساسي.
-        return SendAsync(message);
     }
 
-    // هذا التعريف يوضح الاعتماد الخارجي فقط.
-    // يجب أن تكون الدالة موجودة في NetworkClient الأساسي الذي سيضيفه عضو الشبكة.
-    private Task SendAsync(Message message)
+    public Task LoginAsync(string username, string password) =>
+        SendAsync(Message.Create(MessageType.LoginRequest, new LoginRequestPayload(username, password)));
+
+    public Task RequestCallAsync(string callee) =>
+        SendAsync(Message.Create(MessageType.CallRequest, new CallRequestPayload(Guid.Empty, Username ?? "", callee)));
+
+    public Task AcceptCallAsync(Guid callId, string caller) =>
+        SendAsync(Message.Create(MessageType.CallAccepted, new CallAcceptedPayload(callId, caller, Username ?? "")));
+
+    public Task RejectCallAsync(Guid callId, string caller) =>
+        SendAsync(Message.Create(MessageType.CallRejected, new CallRejectedPayload(callId, caller, Username ?? "")));
+
+    public Task EndCallAsync(Guid callId) =>
+        SendAsync(Message.Create(MessageType.CallEnded, new CallEndedPayload(callId, Username ?? "")));
+
+    public Task CreateRoomAsync(string roomId) =>
+        SendAsync(Message.Create(MessageType.CreateRoomRequest, new CreateRoomRequestPayload(roomId)));
+
+    public Task AddUserToRoomAsync(string roomId, string username) =>
+        SendAsync(Message.Create(MessageType.AddUserToRoomRequest, new AddUserToRoomRequestPayload(roomId, username)));
+
+    public Task AcceptRoomInviteAsync(RoomInvitePayload invite) =>
+        SendAsync(Message.Create(MessageType.RoomInviteAccepted,
+            new RoomInviteAcceptedPayload(invite.InviteId, invite.RoomId, Username ?? string.Empty)));
+
+    public Task RejectRoomInviteAsync(RoomInvitePayload invite) =>
+        SendAsync(Message.Create(MessageType.RoomInviteRejected,
+            new RoomInviteRejectedPayload(invite.InviteId, invite.RoomId, Username ?? string.Empty)));
+
+    public Task JoinRoomAsync(string roomId) =>
+        SendAsync(Message.Create(MessageType.JoinRoomRequest, new JoinRoomRequestPayload(roomId)));
+
+    public Task LeaveRoomAsync(string roomId) =>
+        SendAsync(Message.Create(MessageType.LeaveRoomRequest, new LeaveRoomRequestPayload(roomId)));
+
+    public Task StartRoomMediaAsync(string roomId) =>
+        SendAsync(Message.Create(MessageType.StartRoomMedia,
+            new StartRoomMediaPayload(roomId, Guid.Empty)));
+
+    public Task StopRoomMediaAsync(string roomId, Guid mediaId) =>
+        SendAsync(Message.Create(MessageType.StopRoomMedia,
+            new StopRoomMediaPayload(roomId, mediaId)));
+
+    /// إرسال رسالة مسلسلة عبر اتصال TCP.
+    private async Task SendAsync(Message message)
     {
-        throw new NotImplementedException(
-            "يتم توفير SendAsync من كود شبكة TCP الأساسي.");
+        if (_framing is null || _cts is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await _framing.WriteMessageAsync(message, _cts.Token).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            RaiseDisconnected();
+        }
     }
 
-    // Issue #3: يستدعيها كود قراءة TCP عند وصول رسالة من الخادم.
-    private void HandleIssue3Message(Message message)
+    /// حلقة القراءة الخلفية لاستقبال الرسائل القادمة من السيرفر باستمرار.
+    private async Task ReadLoopAsync(CancellationToken ct)
+    {
+        try
+        {
+            while (!ct.IsCancellationRequested)
+            {
+                Message? message;
+                try
+                {
+                    message = await _framing!.ReadMessageAsync(ct).ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                    break;
+                }
+
+                if (message is null)
+                {
+                    break;
+                }
+
+                HandleMessage(message);
+            }
+        }
+        finally
+        {
+            RaiseDisconnected();
+        }
+    }
+
+    /// توجيه ومعالجة الرسائل الواردة بناءً على نوعها.
+    private void HandleMessage(Message message)
     {
         switch (message.Type)
         {
-            case MessageType.CallRequest:
+            case MessageType.LoginResponse:
+                var login = message.ReadPayload<LoginResponsePayload>()!;
+                if (login.Success)
                 {
-                    var request =
-                        message.ReadPayload<CallRequestPayload>();
-
-                    if (request is not null)
-                    {
-                        // يعتمد على كود Dispatcher الموجود في NetworkClient الأساسي.
-                        IncomingCall?.Invoke(request);
-                    }
-
-                    break;
+                    Username = login.Username;
+                    SessionToken = login.SessionToken;
                 }
+                Raise(() => LoginResponseReceived?.Invoke(login));
+                break;
+
+            case MessageType.OnlineUsersUpdate:
+                Raise(() => OnlineUsersUpdated?.Invoke(message.ReadPayload<OnlineUsersUpdatePayload>()!));
+                break;
+
+            case MessageType.CallRequest:
+                Raise(() => IncomingCall?.Invoke(message.ReadPayload<CallRequestPayload>()!));
+                break;
+
+            case MessageType.CallAccepted:
+                Raise(() => CallAccepted?.Invoke(message.ReadPayload<CallAcceptedPayload>()!));
+                break;
+
+            case MessageType.CallRejected:
+                Raise(() => CallRejected?.Invoke(message.ReadPayload<CallRejectedPayload>()!));
+                break;
+
+            case MessageType.CallEnded:
+                Raise(() => CallEnded?.Invoke(message.ReadPayload<CallEndedPayload>()!));
+                break;
 
             case MessageType.CallTimedOut:
-                {
-                    var timeout =
-                        message.ReadPayload<CallTimedOutPayload>();
-
-                    if (timeout is not null)
-                    {
-                        CallTimedOut?.Invoke(timeout);
-                    }
-
-                    break;
-                }
+                Raise(() => CallTimedOut?.Invoke(message.ReadPayload<CallTimedOutPayload>()!));
+                break;
 
             case MessageType.CallError:
-                {
-                    // يعتمد هذا الجزء على نوع الخطأ الذي يتفق عليه الفريق.
-                    var error =
-                        message.ReadPayload<ErrorPayload>();
+                Raise(() => CallError?.Invoke(message.ReadPayload<ErrorPayload>()!));
+                break;
 
-                    if (error is not null)
-                    {
-                        CallError?.Invoke(error);
-                    }
+            case MessageType.Error:
+                Raise(() => ErrorReceived?.Invoke(message.ReadPayload<ErrorPayload>()!));
+                break;
 
-                    break;
-                }
+            case MessageType.RoomUpdate:
+                Raise(() => RoomUpdated?.Invoke(message.ReadPayload<RoomUpdatePayload>()!));
+                break;
+
+            case MessageType.RoomError:
+                Raise(() => RoomError?.Invoke(message.ReadPayload<RoomErrorPayload>()!));
+                break;
+
+            case MessageType.RoomMediaStarted:
+                Raise(() => RoomMediaStarted?.Invoke(message.ReadPayload<RoomMediaPayload>()!));
+                break;
+
+            case MessageType.RoomMediaStopped:
+                Raise(() => RoomMediaStopped?.Invoke(message.ReadPayload<RoomMediaPayload>()!));
+                break;
+
+            case MessageType.RoomInvite:
+                Raise(() => RoomInviteReceived?.Invoke(message.ReadPayload<RoomInvitePayload>()!));
+                break;
+            case MessageType.RoomInviteAccepted:
+                Raise(() => RoomInviteAccepted?.Invoke(message.ReadPayload<RoomInviteAcceptedPayload>()!));
+                break;
+            case MessageType.RoomInviteRejected:
+                Raise(() => RoomInviteRejected?.Invoke(message.ReadPayload<RoomInviteRejectedPayload>()!));
+                break;
         }
+    }
+
+    /// ضمان تنفيذ الأحداث على خيط واجهة المستخدم الخاص بـ WPF (Dispatcher).
+    private static void Raise(Action action)
+    {
+        if (Application.Current?.Dispatcher is { } dispatcher && !dispatcher.CheckAccess())
+        {
+            dispatcher.Invoke(action);
+        }
+        else
+        {
+            action();
+        }
+    }
+
+    private bool _disconnectedRaised;
+
+    private void RaiseDisconnected()
+    {
+        if (_disconnectedRaised) return;
+        _disconnectedRaised = true;
+        Raise(() => Disconnected?.Invoke());
     }
 
     public void Dispose()
     {
-        // يعتمد التخلص من TCP على كود الشبكة الأساسي.
+        _cts?.Cancel();
+        _tcpClient?.Close();
     }
 }

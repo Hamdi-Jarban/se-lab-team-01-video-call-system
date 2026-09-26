@@ -5,6 +5,9 @@ using VideoCall.Client.Contracts;
 
 namespace VideoCall.Client.Views;
 
+/// <summary>
+/// ÇáßæÏ ÇáÎáİí áäÇİĞÉ ÊÓÌíá ÇáÏÎæá: ãÓÄæá Úä ÑÈØ ÇáæÇÌåÉ ÈäãæĞÌ ÇáÚÑÖ (ViewModel) æÇáÊÚÇãá ãÚ ÇáÃÍÏÇË.
+/// </summary>
 public partial class LoginWindow : Window
 {
     private readonly LoginViewModel _viewModel;
@@ -14,27 +17,28 @@ public partial class LoginWindow : Window
     {
         InitializeComponent();
         _network = network;
-
-        // ÊåíÆÉ ÇáÜ ViewModel æÑÈØ ÇáÈíÇäÇÊ ÈÇáæÇÌåÉ
+        
+        // ÊåíÆÉ äãæĞÌ ÇáÚÑÖ æÑÈØå ÈÓíÇŞ ÇáÈíÇäÇÊ (DataContext) æÇáÇÔÊÑÇß İí ÍÏË ÇáäÌÇÍ
         _viewModel = new LoginViewModel(network);
         _viewModel.LoginSucceeded += OnLoginSucceeded;
         DataContext = _viewModel;
     }
 
+    // ÊãÑíÑ ßáãÉ ÇáãÑæÑ Åáì äãæĞÌ ÇáÚÑÖ Ëã ãÓÍåÇ İæÑÇğ ãä ÇáæÇÌåÉ áÃÓÈÇÈ ÃãäíÉ
     private async void Login_Click(object sender, RoutedEventArgs e)
     {
         await _viewModel.LoginAsync(PasswordBox.Password);
         PasswordBox.Clear();
     }
 
-    // ÒÑ ÊÓÌíá ÇáÏÎæá
+    // ãÚÇáÌ ÇáÍÏË ÇáãÑÈæØ ÈÒÑ ÇáÏÎæá İí ãáİ XAML
     private async void LoginButton_Click(object sender, RoutedEventArgs e)
     {
         await _viewModel.LoginAsync(PasswordBox.Password);
-        PasswordBox.Clear(); // ãÓÍ ßáãÉ ÇáãÑæÑ ÈÚÏ ÇáÅÑÓÇá
+        PasswordBox.Clear();
     }
 
-    // ÇáÇäÊŞÇá ááÔÇÔÉ ÇáÑÆíÓíÉ ÈÚÏ äÌÇÍ ÇáÏÎæá
+    // ÇáÇäÊŞÇá Åáì ÇáäÇİĞÉ ÇáÑÆíÓíÉ ááÊØÈíŞ æÅÛáÇŞ äÇİĞÉ ÇáÏÎæá ÇáÍÇáíÉ ÚäÏ äÌÇÍ ÇáÚãáíÉ
     private void OnLoginSucceeded()
     {
         var main = new MainWindow(_network);
@@ -43,7 +47,7 @@ public partial class LoginWindow : Window
         Close();
     }
 
-    // ÊäÙíİ ÇáÃÍÏÇË ÚäÏ ÅÛáÇŞ ÇáäÇİĞÉ
+    // ÊäÙíİ ÇáãæÇÑÏ æÅáÛÇÁ ÇáÇÑÊÈÇØ ÈÇáÃÍÏÇË ÚäÏ ÅÛáÇŞ ÇáäÇİĞÉ áÊÌäÈ ÊÓÑÈ ÇáĞÇßÑÉ (Memory Leak)
     protected override void OnClosed(EventArgs e)
     {
         _viewModel.LoginSucceeded -= OnLoginSucceeded;
