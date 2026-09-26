@@ -1,0 +1,125 @@
+<Window x:Class="VideoCall.Client.Views.GroupCallWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="ÇáãÍÇÏËÉ ÇáÌãÇÚíÉ" Height="760" Width="1180"
+        MinHeight="620" MinWidth="900"
+        WindowStartupLocation="CenterOwner"
+        FlowDirection="RightToLeft">
+    
+    <!-- ÇáÔÈßÉ ÇáÑÆíÓíÉ ãÞÓãÉ Åáì 3 ÕÝæÝ: ÇáÊÑæíÓÉ¡ ãäØÞÉ ÇáÚÑÖ¡ æÔÑíØ ÇáÊÍßã -->
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- ÇáÞÓã ÇáÚáæí (ÇáÊÑæíÓÉ): íÚÑÖ ÇÓã ÇáäÇÝÐÉ¡ ãÚÑÝ ÇáÛÑÝÉ¡ æÔÑíØ ÍÇáÉ ÇáÇÊÕÇá -->
+        <Grid Grid.Row="0" Margin="0,0,0,18">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="ÇáãÍÇÏËÉ ÇáÌãÇÚíÉ" Style="{StaticResource TitleText}" />
+                <TextBlock Text="{Binding RoomId, StringFormat='ÇáÛÑÝÉ: {0}'}"
+                           Foreground="#94A3B8" Margin="0,6,0,0" />
+            </StackPanel>
+            
+            <!-- ÑÓÇáÉ ÍÇáÉ ÇáÇÊÕÇá (ãËá: ãÊÕá¡ ÌÇÑí ÇáÊåíÆÉ...) -->
+            <Border Grid.Column="1" Background="#172554" Padding="14,8" CornerRadius="8">
+                <TextBlock Text="{Binding StatusMessage}" Foreground="#BFDBFE" />
+            </Border>
+        </Grid>
+
+        <!-- ÇáÞÓã ÇáÃæÓØ: ãÓÇÍÉ ÇáÚÑÖ ãÞÓãÉ áÔÑíØ ÌÇäÈí (ááãÚÇíäÉ) æÔÈßÉ ááÝíÏíæåÇÊ ÇáÈÚíÏÉ -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="255" /> <!-- ÚÑÖ ÇáÔÑíØ ÇáÌÇäÈí -->
+                <ColumnDefinition Width="18" />  <!-- ÝÇÕá ÝÇÑÛ -->
+                <ColumnDefinition Width="*" />   <!-- ãÓÇÍÉ ÔÈßÉ ÇáãÔÇÑßíä ÊÃÎÐ ÇáÈÇÞí -->
+            </Grid.ColumnDefinitions>
+
+            <!-- ÇáÔÑíØ ÇáÌÇäÈí (ÇáãÚÇíäÉ ÇáãÍáíÉ æÞÇÆãÉ ÇáÃÓãÇÁ) -->
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="ÇáãÚÇíäÉ ÇáãÍáíÉ" Style="{StaticResource FieldLabel}" />
+                
+                <!-- ÚÑÖ ÝíÏíæ ÇáãÓÊÎÏã ÇáãÍáí (ÇáßÇãíÑÇ ÇáÎÇÕÉ Èß) -->
+                <Border Background="#020617" CornerRadius="12" Height="190" Margin="0,0,0,18">
+                    <Grid>
+                        <Image Source="{Binding LocalVideo}" Stretch="Uniform" Margin="5" />
+                        <!-- ÊÙåÑ åÐå ÇáÑÓÇáÉ ßÎáÝíÉ Ýí ÍÇá ÅÛáÇÞ ÇáßÇãíÑÇ Ãæ ÚÏã ÊæÝÑåÇ -->
+                        <TextBlock Text="ÇáßÇãíÑÇ ãÊæÞÝÉ" Foreground="#64748B"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Grid>
+                </Border>
+                
+                <!-- ÞÇÆãÉ ãÈÓØÉ ÈÃÓãÇÁ ÇáãÔÇÑßíä ÇáãÊæÇÌÏíä Ýí ÇáÛÑÝÉ -->
+                <Border Background="#1E293B" CornerRadius="12" Padding="16">
+                    <StackPanel>
+                        <TextBlock Text="ÇáãÔÇÑßæä" Style="{StaticResource FieldLabel}" />
+                        <ItemsControl ItemsSource="{Binding Participants}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <DockPanel Margin="0,8">
+                                        <Ellipse Width="9" Height="9" Fill="#22C55E" Margin="0,0,9,0" />
+                                        <TextBlock Text="{Binding Username}" Foreground="#E2E8F0" />
+                                    </DockPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- ÇáãÓÇÍÉ ÇáÑÆíÓíÉ: ÔÈßÉ ãÑäÉ (UniformGrid) áÚÑÖ ÝíÏíæåÇÊ ÌãíÚ ÇáãÔÇÑßíä ÇáÂÎÑíä -->
+            <Border Grid.Column="2" Background="#020617" CornerRadius="12" Padding="8">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{Binding Participants}">
+                        <ItemsControl.ItemsPanel>
+                            <!-- ÇÓÊÎÏÇã UniformGrid áÊÑÊíÈ ÇáÔÇÔÇÊ ÈÑãÌíÇð Ýí ÔÈßÉ ãÊäÇÓÞÉ (ÃÚãÏÉ æÕÝæÝ) -->
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="2" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        
+                        <!-- ÞÇáÈ ÇáÚÑÖ ÇáÎÇÕ Èßá ãÔÇÑß ÈÚíÏ (ÔÇÔÉ ÝíÏíæ + ÔÑíØ ÇáãÚáæãÇÊ) -->
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="#1E293B" CornerRadius="10" Margin="7" MinHeight="230">
+                                    <Grid>
+                                        <!-- ÝíÏíæ ÇáãÔÇÑß -->
+                                        <Image Source="{Binding Video}" Stretch="Uniform" Margin="6" />
+                                        
+                                        <!-- ÊÙåÑ åÐå ÇáÑÓÇáÉ ÝÞØ ÅÐÇ ßÇäÊ ÞíãÉ ÇáÝíÏíæ Null (ÇáßÇãíÑÇ ãÛáÞÉ ãä ØÑÝåã) -->
+                                        <TextBlock Text="áÇ ÊæÌÏ ÕæÑÉ" Foreground="#64748B"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   Visibility="{Binding Video, Converter={StaticResource NullToVisibilityConverter}}" />
+                                        
+                                        <!-- ÔÑíØ ÔÝÇÝ Ýí ÃÓÝá ßá ÝíÏíæ íÚÑÖ ÇÓã ÇáãÔÇÑß æÍÇáÉ ÇáãÇíßÑæÝæä ÇáÎÇÕ Èå -->
+                                        <Border Background="#D90F172A" VerticalAlignment="Bottom" Padding="10,7">
+                                            <DockPanel>
+                                                <TextBlock Text="{Binding Username}" Foreground="White" FontWeight="SemiBold" />
+                                                <TextBlock DockPanel.Dock="Right" Text="{Binding IsMuted, StringFormat='ßÊã: {0}'}"
+                                                           Foreground="#CBD5E1" FontSize="11" />
+                                            </DockPanel>
+                                        </Border>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <!-- ÇáÞÓã ÇáÓÝáí: ÃÒÑÇÑ ÇáÊÍßã ÈÇáãßÇáãÉ (ÇáãÇíßÑæÝæä¡ ÇáßÇãíÑÇ¡ ÇáÎÑæÌ) -->
+        <Border Grid.Row="2" Background="#1E293B" CornerRadius="12" Padding="12" Margin="0,18,0,0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <Button Content="ÇáãíßÑæÝæä" Style="{StaticResource SecondaryButton}" Command="{Binding ToggleMuteCommand}" />
+                <Button Content="ÇáßÇãíÑÇ" Style="{StaticResource SecondaryButton}" Command="{Binding ToggleCameraCommand}" />
+                <Button Content="ãÛÇÏÑÉ ÇáãßÇáãÉ" Style="{StaticResource DangerButton}" Command="{Binding LeaveCommand}" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>
