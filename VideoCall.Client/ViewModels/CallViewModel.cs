@@ -10,15 +10,24 @@ using VideoCall.Client.Contracts;
 
 namespace VideoCall.Client.ViewModels;
 
+/// äãæĞÌ ÇáÚÑÖ (ViewModel) ÇáãÓÄæá Úä ÅÏÇÑÉ æÇÌåÉ ÇáãßÇáãÉ ÇáÍíÉ.
+/// íÑÈØ Èíä ÅÔÇÑÇÊ ÇáÔÈßÉ (TCP)¡ äŞá ÇáæÓÇÆØ (UDP)¡ æÎÏãÇÊ ÇáÊŞÇØ/ÊÔÛíá ÇáÕæÊ æÇáİíÏíæ.
 public sealed class CallViewModel : ViewModelBase, IDisposable
 {
     private readonly INetworkClient _network;
     private readonly string _serverHost;
     private readonly Guid _callId;
+
+    // áÅáÛÇÁ ÇáÚãáíÇÊ ÛíÑ ÇáãÊÒÇãäÉ (ãËá ãåÇã ÇáÅÑÓÇá) ÚäÏ ÅäåÇÁ ÇáãßÇáãÉ
     private readonly CancellationTokenSource _stop = new();
+
+    // ãÌãÚÇÊ ÍÒã ÇáÈíÇäÇÊ ÇáæÇÑÏÉ áÅÚÇÏÉ ÈäÇÁ ÇáÅØÇÑÇÊ æÇáŞØÚ ÇáÕæÊíÉ
     private readonly VideoFrameReassembler _reassembler = new();
     private readonly AudioChunkReassembler _audioReassembler = new();
+
+    // ÊÊÈÚ ãåÇã ÇáÅÑÓÇá ÇáÍÇáíÉ áÖãÇä ÇßÊãÇáåÇ Ãæ ÅáÛÇÆåÇ ÈÃãÇä ÚäÏ ÇáÅÛáÇŞ
     private readonly ConcurrentBag<Task> _sendTasks = new();
+
     private IMediaTransport? _udp;
     private AudioCaptureService? _audioCapture;
     private AudioPlaybackService? _audioPlayback;
@@ -27,7 +36,9 @@ public sealed class CallViewModel : ViewModelBase, IDisposable
     private BitmapSource? _remoteVideo;
     private bool _isMuted;
     private bool _isCameraOn = true;
-    private string _stateText = "Ø¬Ø§Ø±Ù Ø§Ù„Ø§ØªØµØ§Ù„...";
+    private string _stateText = "ÌÇÑò ÇáÇÊÕÇá...";
+
+    // ÇÓÊÎÏÇã ãÊÛíÑÇÊ ÑŞãíÉ áÖãÇä ÓáÇãÉ ÇáÎíæØ (Thread-safety) ÈÇÓÊÎÏÇã Interlocked
     private int _mediaStarted;
     private int _closed;
 
@@ -52,6 +63,8 @@ public sealed class CallViewModel : ViewModelBase, IDisposable
         ToggleMuteCommand = new RelayCommand(ToggleMute);
         ToggleCameraCommand = new RelayCommand(ToggleCamera);
         EndCallCommand = new AsyncCommand(EndCallAsync);
+
+        // ÇáÇÔÊÑÇß İí ÃÍÏÇË ÇáÔÈßÉ ÇáÎÇÕÉ ÈÇáãßÇáãÉ
         _network.CallAccepted += OnCallAccepted;
         _network.CallEnded += OnCallEnded;
         _network.RoomMediaStarted += OnMediaStarted;
@@ -60,73 +73,93 @@ public sealed class CallViewModel : ViewModelBase, IDisposable
 
     private void OnCallAccepted(CallAcceptedPayload payload)
     {
-        if (payload.CallId != _callId) return;
-        RunOnUi(() => StateText = "ØªÙ… Ù‚Ø¨ÙˆÙ„ Ø§Ù„Ø§ØªØµØ§Ù„ØŒ Ø¬Ø§Ø±ÙŠ ØªØ´ØºÙŠÙ„ Ø§Ù„ÙˆØ³Ø§Ø¦Ø·...");
+        if (payload.CallId != _callId)
+            return;
+        RunOnUi(() => StateText = "Êã ŞÈæá ÇáÇÊÕÇá¡ ÌÇÑí ÊÔÛíá ÇáæÓÇÆØ...");
     }
 
     private void OnMediaStarted(RoomMediaPayload payload)
     {
-        if (!string.Equals(payload.RoomId, _callId.ToString("N"), StringComparison.OrdinalIgnoreCase)) return;
-        if (payload.MediaId == Guid.Empty || Interlocked.Exchange(ref _mediaStarted, 1) != 0) return;
-        RunOnUi(() => StateText = "Ù…ØªØµÙ„");
+        if (!string.Equals(payload.RoomId, _callId.ToString("N"), StringComparison.OrdinalIgnoreCase))
+            return;
+
+        // ÖãÇä ÊäİíĞ ÊåíÆÉ ÇáæÓÇÆØ ãÑÉ æÇÍÏÉ İŞØ ÈÇÓÊÎÏÇã Interlocked
+        if (payload.MediaId == Guid.Empty || Interlocked.Exchange(ref _mediaStarted, 1) != 0)
+            return;
+
+        RunOnUi(() => StateText = "ãÊÕá");
         StartMediaPipeline(payload.MediaId);
     }
 
+    /// ÊåíÆÉ ãÓÇÑ ÇáæÓÇÆØ: ÈÏÁ Úãíá UDP¡ ÎÏãÇÊ ÇáÕæÊ¡ æÎÏãÇÊ ÇáİíÏíæ.
     private void StartMediaPipeline(Guid mediaId)
     {
         if (_network.SessionToken is not { } token || string.IsNullOrWhiteSpace(_network.Username))
         {
-            RunOnUi(() => StateText = "Ø¬Ù„Ø³Ø© Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù… ØºÙŠØ± ØµØ§Ù„Ø­Ø©");
+            RunOnUi(() => StateText = "ÌáÓÉ ÇáãÓÊÎÏã ÛíÑ ÕÇáÍÉ");
             return;
         }
 
         try
         {
+            // 1. ÊåíÆÉ Úãíá UDP áÇÓÊŞÈÇá æÅÑÓÇá ÇáæÓÇÆØ
             _udp = new UdpMediaClient(_serverHost, token, mediaId, _network.Username);
             _udp.AudioPacketReceived += packet =>
             {
                 var complete = _audioReassembler.Accept(packet);
-                if (complete is not null) _audioPlayback?.Enqueue(complete);
+                if (complete is not null)
+                    _audioPlayback?.Enqueue(complete);
             };
             _udp.VideoPacketReceived += OnRemoteVideo;
-            _udp.TransportError += ex => RunOnUi(() => StateText = $"Ø®Ø·Ø£ UDP: {ex.Message}");
+            _udp.TransportError += ex => RunOnUi(() => StateText = $"ÎØÃ UDP: {ex.Message}");
             _udp.Start();
 
+            // 2. ÊåíÆÉ ÎÏãÇÊ ÇáÕæÊ ãÚ ÊİÚíá ÎæÇÑÒãíÉ ÅáÛÇÁ ÇáÕÏì (AEC)
             _audioPlayback = new AudioPlaybackService();
-            // Pass the playback's reference buffer in so captured mic audio
-            // has the speaker's own output subtracted out (echo cancellation).
+            // ÊãÑíÑ ÇáãÑÌÚ ÇáÕæÊí (EchoReference) ÇáÎÇÕ ÈÇáÊÔÛíá Åáì ÎÏãÉ ÇáÊŞÇØ ÇáãÇíßÑæİæä¡
+            // áíÊã ØÑÍ ÕæÊ ÇáÓãÇÚÇÊ ãä ÕæÊ ÇáãÇíßÑæİæä æãäÚ ÍÏæË ÇáÕÏì.
             _audioCapture = new AudioCaptureService(_audioPlayback.EchoReference) { IsMuted = IsMuted };
             _audioCapture.ChunkCaptured += chunk => TrackSend(_udp.SendAudioAsync(chunk, _stop.Token));
             _audioCapture.Start();
 
+            // 3. ÊåíÆÉ ÎÏãÉ ÇáÊŞÇØ ÇáİíÏíæ (ÇáßÇãíÑÇ)
             _videoCapture = new VideoCaptureService();
             _videoCapture.FrameCaptured += OnLocalFrame;
             _videoCapture.Start();
         }
         catch (Exception ex)
         {
-            RunOnUi(() => StateText = $"ØªØ¹Ø°Ø± ØªØ´ØºÙŠÙ„ Ø§Ù„ÙƒØ§Ù…ÙŠØ±Ø§/Ø§Ù„ØµÙˆØª: {ex.Message}");
+            RunOnUi(() => StateText = $"ÊÚĞÑ ÊÔÛíá ÇáßÇãíÑÇ/ÇáÕæÊ: {ex.Message}");
         }
     }
 
     private void OnLocalFrame(byte[] encodedFrame, byte[] preview)
     {
-        if (!IsCameraOn) return;
+        if (!IsCameraOn)
+            return;
         RunOnUi(() =>
         {
-            try { LocalVideo = FrameCodec.BytesToBitmapSource(preview); }
+            try
+            { LocalVideo = FrameCodec.BytesToBitmapSource(preview); }
             catch { }
         });
-        if (_udp is not null) TrackSend(_udp.SendVideoFrameAsync(encodedFrame, _stop.Token));
+
+        // ÅÑÓÇá ÇáÅØÇÑ ÇáãÔİÑ ááØÑİ ÇáÂÎÑ æÅÖÇİÉ ÇáãåãÉ ááãÊÊÈÚ
+        if (_udp is not null)
+            TrackSend(_udp.SendVideoFrameAsync(encodedFrame, _stop.Token));
     }
 
     private void OnRemoteVideo(MediaPacket packet)
     {
         var complete = _reassembler.Accept(packet);
-        if (complete is null) return;
+        if (complete is null)
+            return;
+
+        // İß ÊÔİíÑ ÇáÅØÇÑ ÇáãÓÊáã æÚÑÖå ÈÃãÇä Úáì ÎíØ æÇÌåÉ ÇáãÓÊÎÏã (UI Thread)
         RunOnUi(() =>
         {
-            try { RemoteVideo = FrameCodec.BytesToBitmapSource(complete); }
+            try
+            { RemoteVideo = FrameCodec.BytesToBitmapSource(complete); }
             catch { }
         });
     }
@@ -134,65 +167,85 @@ public sealed class CallViewModel : ViewModelBase, IDisposable
     private void ToggleMute()
     {
         IsMuted = !IsMuted;
-        if (_audioCapture is not null) _audioCapture.IsMuted = IsMuted;
+        if (_audioCapture is not null)
+            _audioCapture.IsMuted = IsMuted;
     }
 
     private void ToggleCamera()
     {
         IsCameraOn = !IsCameraOn;
         _videoCapture?.SetCameraOn(IsCameraOn);
-        if (!IsCameraOn) LocalVideo = null;
+        if (!IsCameraOn)
+            LocalVideo = null; // ãÓÍ ÇáÕæÑÉ ÇáãÍáíÉ ÚäÏ ÇáÅÛáÇŞ
     }
 
     private void OnCallEnded(CallEndedPayload payload)
     {
-        if (payload.CallId != _callId) return;
-        RunOnUi(() => _ = CloseAsync("Ø§Ù†ØªÙ‡Øª Ø§Ù„Ù…ÙƒØ§Ù„Ù…Ø©"));
+        if (payload.CallId != _callId)
+            return;
+        RunOnUi(() => _ = CloseAsync("ÇäÊåÊ ÇáãßÇáãÉ"));
     }
 
-    private void OnDisconnected() => RunOnUi(() => _ = CloseAsync("Ø§Ù†Ù‚Ø·Ø¹ Ø§Ù„Ø§ØªØµØ§Ù„ Ø¨Ø§Ù„Ø®Ø§Ø¯Ù…"));
+    private void OnDisconnected() => RunOnUi(() => _ = CloseAsync("ÇäŞØÚ ÇáÇÊÕÇá ÈÇáÎÇÏã"));
 
     private async Task EndCallAsync()
     {
         if (_callId != Guid.Empty)
         {
-            try { await _network.EndCallAsync(_callId).ConfigureAwait(false); } catch { }
+            try
+            { await _network.EndCallAsync(_callId).ConfigureAwait(false); }
+            catch { }
         }
-        await CloseAsync("Ø§Ù†ØªÙ‡Øª Ø§Ù„Ù…ÙƒØ§Ù„Ù…Ø©").ConfigureAwait(false);
+        await CloseAsync("ÇäÊåÊ ÇáãßÇáãÉ").ConfigureAwait(false);
     }
 
     private async Task CloseAsync(string message)
     {
-        if (Interlocked.Exchange(ref _closed, 1) != 0) return;
+        // ÖãÇä ÊäİíĞ ÚãáíÉ ÇáÅÛáÇŞ ãÑÉ æÇÍÏÉ İŞØ
+        if (Interlocked.Exchange(ref _closed, 1) != 0)
+            return;
+
         RunOnUi(() => StateText = message);
-        _stop.Cancel();
-        // Stop producers first; otherwise a capture callback may enqueue a new
-        // send while the shutdown code is waiting for the old sends.
+        _stop.Cancel(); // ÅáÛÇÁ Ãí ãåÇã ÅÑÓÇá ãÚáŞÉ
+
+        // ÅíŞÇİ ÇáãäÊÌíä (ÇáßÇãíÑÇ æÇáãÇíß) ÃæáÇğº áãäÚ ÅÖÇİÉ ãåÇã ÅÑÓÇá ÌÏíÏÉ 
+        // ÈíäãÇ íäÊÙÑ ßæÏ ÇáÅÛáÇŞ ÇßÊãÇá ÇáãåÇã ÇáŞÏíãÉ.
         _videoCapture?.Dispose();
         _audioCapture?.Dispose();
-        try { await Task.WhenAll(_sendTasks.ToArray()).ConfigureAwait(false); } catch (OperationCanceledException) { }
+
+        // ÇäÊÙÇÑ ÇßÊãÇá ÇáãåÇã ÇáÍÇáíÉ ÈÃãÇä æÊÌÇåá ÇÓÊËäÇÁÇÊ ÇáÅáÛÇÁ
+        try
+        { await Task.WhenAll(_sendTasks.ToArray()).ConfigureAwait(false); }
+        catch (OperationCanceledException) { }
+
         _audioPlayback?.Dispose();
         _udp?.Dispose();
+
+        // ÅáÛÇÁ ÇáÇÔÊÑÇß İí ÇáÃÍÏÇË áãäÚ ÊÓÑÈ ÇáĞÇßÑÉ (Memory Leaks)
         _network.CallAccepted -= OnCallAccepted;
         _network.CallEnded -= OnCallEnded;
         _network.RoomMediaStarted -= OnMediaStarted;
         _network.Disconnected -= OnDisconnected;
+
         CallClosed?.Invoke();
     }
 
     private void TrackSend(Task task) => _sendTasks.Add(task);
 
-    // Safe to block on: every awaited step in CloseAsync uses ConfigureAwait(false),
-    // so its continuations run on the thread pool and never need to resume on this
-    // (UI) thread. That's what avoids the classic WPF dispatcher deadlock.
-    public void Dispose() => CloseAsync("ØªÙ… Ø¥ØºÙ„Ø§Ù‚ Ø§Ù„Ù…ÙƒØ§Ù„Ù…Ø©").GetAwaiter().GetResult();
+    // Âãä ááÇÓÊÏÚÇÁ Ïæä ÇáŞáŞ ãä ÊÌãíÏ ÇáæÇÌåÉ: ßá ÎØæÉ İí CloseAsync ÊÓÊÎÏã ConfigureAwait(false)¡
+    // ããÇ íÚäí Ãä ÇáÇÓÊßãÇáÇÊ (Continuations) ÊÚãá Úáì Thread Pool æáÇ ÊÍÊÇÌ ááÚæÏÉ Åáì ÎíØ ÇáæÇÌåÉ (UI thread).
+    // åĞÇ ÇáÊÕãíã íÊÌäÈ ãÔßáÉ ÇáÜ Deadlock ÇáÔåíÑÉ İí WPF.
+    public void Dispose() => CloseAsync("Êã ÅÛáÇŞ ÇáãßÇáãÉ").GetAwaiter().GetResult();
 
-    public Task DisposeAsync() => CloseAsync("ØªÙ… Ø¥ØºÙ„Ø§Ù‚ Ø§Ù„Ù…ÙƒØ§Ù„Ù…Ø©");
+    public Task DisposeAsync() => CloseAsync("Êã ÅÛáÇŞ ÇáãßÇáãÉ");
 
+    /// ÏÇáÉ ãÓÇÚÏÉ áÖãÇä ÊäİíĞ ÇáÅÌÑÇÁÇÊ ÇáãÑÊÈØÉ ÈæÇÌåÉ ÇáãÓÊÎÏã Úáì ÎíØ ÇáÜ UI ÈÔßá Âãä.
     private static void RunOnUi(Action action)
     {
         var dispatcher = Application.Current?.Dispatcher;
-        if (dispatcher is null || dispatcher.CheckAccess()) action();
-        else dispatcher.BeginInvoke(action);
+        if (dispatcher is null || dispatcher.CheckAccess())
+            action();
+        else
+            dispatcher.BeginInvoke(action);
     }
 }

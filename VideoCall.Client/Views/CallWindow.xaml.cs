@@ -11,7 +11,7 @@ public partial class CallWindow : System.Windows.Window
         InitializeComponent();
         _viewModel = viewModel;
         DataContext = _viewModel;
-        Title = $"Ø§Ù„Ù…ÙƒØ§Ù„Ù…Ø© - {viewModel.OtherParty}";
+        Title = $"ÇáãßÇáãÉ - {viewModel.OtherParty}";
 
         Closed += (_, _) => _viewModel.Dispose();
     }
