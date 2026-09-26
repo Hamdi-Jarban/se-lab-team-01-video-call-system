@@ -10,68 +10,68 @@ using VideoCall.Shared.Models;
 namespace VideoCall.Server.Api;
 
 /// <summary>
-/// ط®ط§ط¯ظ… HTTP ظ„ظ„ظ‚ط±ط§ط،ط© ظپظ‚ط· ظٹط¹ط±ط¶ ط­ط§ظ„ط© ط§ظ„ط®ط§ط¯ظ… ط§ظ„ط­ط§ظ„ظٹط© ط¨طµظٹط؛ط© JSON.
+/// خادم HTTP للقراءة فقط يعرض حالة الخادم الحالية بصيغة JSON.
 ///
-/// ظٹط¹طھظ…ط¯ ApiServer ط¹ظ„ظ‰ ظ†ظپط³ ط§ظ„ط­ط§ظ„ط© ط§ظ„ظ…ظˆط¬ظˆط¯ط© ظپظٹ ط®ط§ط¯ظ… TCP ظˆUDPطŒ ظ„ظƒظ†ظ‡ ظ„ط§ ظٹظ…ظ„ظƒ
-/// طµظ„ط§ط­ظٹط© طھط¹ط¯ظٹظ„ظ‡ط§. ظٹظ‚ط±ط£ ط§ظ„ط¨ظٹط§ظ†ط§طھ ظ…ظ† IUserPresenceRepository ظˆ
-/// IConversationRepository ظپظ‚ط·طŒ ظˆظ„ط§ ظٹط±طھط¨ط· ظ…ط¨ط§ط´ط±ط© ط¨ط¬ظ„ط³ط§طھ TCP ط£ظˆ ظ…ط³طھظ…ط¹ TCP
-/// ط£ظˆ ط®ط¯ظ…ط© طھظ…ط±ظٹط± ط§ظ„ظˆط³ط§ط¦ط·.
+/// يعتمد ApiServer على نفس الحالة الموجودة في خادم TCP وUDP، لكنه لا يملك
+/// صلاحية تعديلها. يقرأ البيانات من IUserPresenceRepository و
+/// IConversationRepository فقط، ولا يرتبط مباشرة بجلسات TCP أو مستمع TCP
+/// أو خدمة تمرير الوسائط.
 ///
-/// ظٹظˆظپط± ط§ظ„ط®ط§ط¯ظ… ظ†ظ‚ط§ط· ظ‚ط±ط§ط،ط© ظ„ظ…ط±ط§ظ‚ط¨ط©:
-/// - ط­ط§ظ„ط© ط§ظ„ط®ط§ط¯ظ… ظˆط¹ط¯ط¯ ط§ظ„ط¹ظ…ظ„ط§ط، ط§ظ„ظ…طھطµظ„ظٹظ†.
-/// - ط§ظ„ظ…ط³طھط®ط¯ظ…ظٹظ† ط§ظ„ظ…طھطµظ„ظٹظ† ط­ط§ظ„ظٹظ‹ط§.
-/// - ط§ظ„ط؛ط±ظپ ط§ظ„ظ…ظˆط¬ظˆط¯ط©.
-/// - ط¬ظ„ط³ط§طھ ط§ظ„ظˆط³ط§ط¦ط· ط§ظ„ظ†ط´ط·ط©.
+/// يوفر الخادم نقاط قراءة لمراقبة:
+/// - حالة الخادم وعدد العملاء المتصلين.
+/// - المستخدمين المتصلين حاليًا.
+/// - الغرف الموجودة.
+/// - جلسات الوسائط النشطة.
 ///
-/// ظٹط­ظ‚ظ‚ ظ‡ط°ط§ ط§ظ„طھطµظ…ظٹظ… ظ…ط¨ط¯ط£ ط¹ظƒط³ ط§طھط¬ط§ظ‡ ط§ظ„ط§ط¹طھظ…ط§ط¯طŒ ط¥ط° طھط¹طھظ…ط¯ ط·ط¨ظ‚ط© API ط¹ظ„ظ‰ ط¹ظ‚ظˆط¯
-/// Domain ط¨ط¯ظ„ ظ…ط¹ط±ظپط© طھظپط§طµظٹظ„ طھط®ط²ظٹظ† ط§ظ„ط­ط§ظ„ط© ط£ظˆ ط·ط±ظٹظ‚ط© طھط­ط¯ظٹط«ظ‡ط§.
-/// ظƒظ…ط§ ظٹط­ظ‚ظ‚ ظ…ط¨ط¯ط£ ظپطµظ„ ط§ظ„ظ…ط³ط¤ظˆظ„ظٹط§طھطŒ ظ„ط£ظ† ط¬ظ…ظٹط¹ endpoints ظ‡ظ†ط§ ظ„ظ„ظ‚ط±ط§ط،ط© ظپظ‚ط· ظˆظ„ط§
-/// ظٹظ…ظƒظ†ظ‡ط§ ط¥ظ†ط´ط§ط، ط؛ط±ظپط© ط£ظˆ ط¨ط¯ط، ظ…ظƒط§ظ„ظ…ط© ط£ظˆ طھط¹ط¯ظٹظ„ ط­ط§ظ„ط© ط§ظ„ظ†ط¸ط§ظ….
+/// يحقق هذا التصميم مبدأ عكس اتجاه الاعتماد، إذ تعتمد طبقة API على عقود
+/// Domain بدل معرفة تفاصيل تخزين الحالة أو طريقة تحديثها.
+/// كما يحقق مبدأ فصل المسؤوليات، لأن جميع endpoints هنا للقراءة فقط ولا
+/// يمكنها إنشاء غرفة أو بدء مكالمة أو تعديل حالة النظام.
 ///
-/// طھطھظ… ط¥ط¯ط§ط±ط© ط§ظ„ط¥ظٹظ‚ط§ظپ ط¨ط·ط±ظٹظ‚ط© ظ…ظ†ط¸ظ…ط©ط› ط­ظٹط« ظٹطھظ… ط¥ظ„ط؛ط§ط، ط­ظ„ظ‚ط© ط§ظ„ط§ط³طھظ‚ط¨ط§ظ„طŒ ط«ظ… ط§ظ†طھط¸ط§ط±
-/// ط§ظ„ط·ظ„ط¨ط§طھ ط§ظ„ط¬ط§ط±ظٹط©طŒ ظˆط¨ط¹ط¯ ط°ظ„ظƒ ط¥ط؛ظ„ط§ظ‚ ظ…ط³طھظ…ط¹ HTTP ظˆطھط­ط±ظٹط± ط§ظ„ظ…ظˆط§ط±ط¯.
+/// تتم إدارة الإيقاف بطريقة منظمة؛ حيث يتم إلغاء حلقة الاستقبال، ثم انتظار
+/// الطلبات الجارية، وبعد ذلك إغلاق مستمع HTTP وتحرير الموارد.
 /// </summary>
 public sealed class ApiServer : IAsyncDisposable
 {
-    // ط¥ط¹ط¯ط§ط¯ط§طھ JSON ط§ظ„ظ…ظˆط­ط¯ط© ظ„ط¬ظ…ظٹط¹ ط§ط³طھط¬ط§ط¨ط§طھ HTTP.
+    // إعدادات JSON الموحدة لجميع استجابات HTTP.
     private static readonly JsonSerializerOptions JsonOptions =
         new(JsonSerializerDefaults.Web);
 
-    // ظ…ط³طھظ…ط¹ HTTP ط§ظ„ظ…ط³ط¤ظˆظ„ ط¹ظ† ط§ط³طھظ‚ط¨ط§ظ„ ط§ظ„ط·ظ„ط¨ط§طھ.
+    // مستمع HTTP المسؤول عن استقبال الطلبات.
     private readonly HttpListener _listener = new();
 
-    // ظ…ط³طھظˆط¯ط¹ ط§ظ„ظ…ط³طھط®ط¯ظ…ظٹظ† ط§ظ„ظ…طھطµظ„ظٹظ†.
+    // مستودع المستخدمين المتصلين.
     private readonly IUserPresenceRepository _presence;
 
-    // ظ…ط³طھظˆط¯ط¹ ط§ظ„ظ…ط­ط§ط¯ط«ط§طھ ظˆط§ظ„ط؛ط±ظپ.
+    // مستودع المحادثات والغرف.
     private readonly IConversationRepository _conversations;
 
-    // ط®ط¯ظ…ط© طھط³ط¬ظٹظ„ ط£ط­ط¯ط§ط« ظˆط£ط®ط·ط§ط، API.
+    // خدمة تسجيل أحداث وأخطاء API.
     private readonly IAppLogger _logger;
 
-    // ط§ظ„ظ…ظ‡ط§ظ… ط§ظ„ط®ط§طµط© ط¨ط§ظ„ط·ظ„ط¨ط§طھ ط§ظ„طھظٹ ط¨ط¯ط£طھ ظˆظ„ظ… طھظ†طھظ‡ ط¨ط¹ط¯.
-    // ظٹطھظ… ط§ظ†طھط¸ط§ط±ظ‡ط§ ط£ط«ظ†ط§ط، ط§ظ„ط¥ظٹظ‚ط§ظپ ط§ظ„ظ…ظ†ط¸ظ….
+    // المهام الخاصة بالطلبات التي بدأت ولم تنته بعد.
+    // يتم انتظارها أثناء الإيقاف المنظم.
     private readonly ConcurrentBag<Task> _pendingRequests = new();
 
-    // ظ…طµط¯ط± ط§ظ„ط¥ظ„ط؛ط§ط، ط§ظ„ط¯ط§ط®ظ„ظٹ ط§ظ„ظ…ط±طھط¨ط· ط¨ط¥ظ„ط؛ط§ط، ط§ظ„طھط·ط¨ظٹظ‚ ط§ظ„ط®ط§ط±ط¬ظٹ.
+    // مصدر الإلغاء الداخلي المرتبط بإلغاء التطبيق الخارجي.
     private CancellationTokenSource? _internalCts;
 
-    // ظ…ظ‡ظ…ط© ط­ظ„ظ‚ط© ط§ط³طھظ‚ط¨ط§ظ„ ط·ظ„ط¨ط§طھ HTTP.
+    // مهمة حلقة استقبال طلبات HTTP.
     private Task? _acceptLoopTask;
 
-    // ظ…ط¤ظ‚طھ ظ‚ظٹط§ط³ ظ…ط¯ط© طھط´ط؛ظٹظ„ API.
+    // مؤقت قياس مدة تشغيل API.
     private Stopwatch? _uptime;
 
-    // ط¹ظ„ط§ظ…ط© ط°ط±ظٹط© طھظ…ظ†ط¹ طھظ†ظپظٹط° ط§ظ„ط¥ظٹظ‚ط§ظپ ط£ظƒط«ط± ظ…ظ† ظ…ط±ط©.
+    // علامة ذرية تمنع تنفيذ الإيقاف أكثر من مرة.
     private int _stopped;
 
     /// <summary>
-    /// ظٹظ†ط´ط¦ ط®ط§ط¯ظ… API ظˆظٹط±ط¨ط·ظ‡ ط¨ظ…ط³طھظˆط¯ط¹ط§طھ ط§ظ„ط­ط§ظ„ط© ظˆط®ط¯ظ…ط© ط§ظ„طھط³ط¬ظٹظ„.
+    /// ينشئ خادم API ويربطه بمستودعات الحالة وخدمة التسجيل.
     /// </summary>
-    /// <param name="presence">ظ…ط³طھظˆط¯ط¹ ط§ظ„ظ…ط³طھط®ط¯ظ…ظٹظ† ط§ظ„ظ…طھطµظ„ظٹظ†.</param>
-    /// <param name="conversations">ظ…ط³طھظˆط¯ط¹ ط§ظ„ظ…ط­ط§ط¯ط«ط§طھ ظˆط§ظ„ط؛ط±ظپ.</param>
-    /// <param name="logger">ط®ط¯ظ…ط© طھط³ط¬ظٹظ„ ط§ظ„ط£ط­ط¯ط§ط« ظˆط§ظ„ط£ط®ط·ط§ط،.</param>
-    /// <param name="port">ظ…ظ†ظپط° HTTP ط§ظ„ط°ظٹ ط³ظٹط³طھظ…ط¹ ط¹ظ„ظٹظ‡ ط§ظ„ط®ط§ط¯ظ….</param>
+    /// <param name="presence">مستودع المستخدمين المتصلين.</param>
+    /// <param name="conversations">مستودع المحادثات والغرف.</param>
+    /// <param name="logger">خدمة تسجيل الأحداث والأخطاء.</param>
+    /// <param name="port">منفذ HTTP الذي سيستمع عليه الخادم.</param>
     public ApiServer(IUserPresenceRepository presence, IConversationRepository conversations, IAppLogger logger, int port)
     {
         _presence = presence
@@ -83,21 +83,21 @@ public sealed class ApiServer : IAsyncDisposable
         _logger = logger
             ?? throw new ArgumentNullException(nameof(logger));
 
-        // ط§ط³طھط®ط¯ط§ظ… localhost ظٹظ‚ظ„ظ„ ظ…طھط·ظ„ط¨ط§طھ URL ACL ط¹ظ„ظ‰ Windows.
-        // ظ„ط§ ظٹطھظ… ظپطھط­ ط§ظ„ط®ط¯ظ…ط© ط¹ظ„ظ‰ ط¬ظ…ظٹط¹ ط§ظ„ظˆط§ط¬ظ‡ط§طھ ط¥ظ„ط§ ط¨ط¹ط¯ ط¥ط¹ط¯ط§ط¯ ط§ظ„طµظ„ط§ط­ظٹط§طھ
-        // ط§ظ„ظ…ظ†ط§ط³ط¨ط© ظˆطھط£ظ…ظٹظ† ظ†ظ‚ط·ط© ط§ظ„ظ†ظ‡ط§ظٹط© ظپظٹ ط¨ظٹط¦ط© ط§ظ„ط¥ظ†طھط§ط¬.
+        // استخدام localhost يقلل متطلبات URL ACL على Windows.
+        // لا يتم فتح الخدمة على جميع الواجهات إلا بعد إعداد الصلاحيات
+        // المناسبة وتأمين نقطة النهاية في بيئة الإنتاج.
         _listener.Prefixes.Add($"http://localhost:{port}/");
     }
 
     /// <summary>
-    /// ظٹط¨ط¯ط£ ظ…ط³طھظ…ط¹ HTTP ظˆط­ظ„ظ‚ط© ط§ط³طھظ‚ط¨ط§ظ„ ط§ظ„ط·ظ„ط¨ط§طھ.
+    /// يبدأ مستمع HTTP وحلقة استقبال الطلبات.
     /// </summary>
     /// <param name="externalCancellation">
-    /// ط±ظ…ط² ط§ظ„ط¥ظ„ط؛ط§ط، ط§ظ„ظ‚ط§ط¯ظ… ظ…ظ† ط¯ظˆط±ط© طھط´ط؛ظٹظ„ ط§ظ„طھط·ط¨ظٹظ‚.
+    /// رمز الإلغاء القادم من دورة تشغيل التطبيق.
     /// </param>
     public Task StartAsync(CancellationToken externalCancellation)
     {
-        // ظ…ظ†ط¹ ط¨ط¯ط، ط§ظ„ط®ط¯ظ…ط© ط£ظƒط«ط± ظ…ظ† ظ…ط±ط©.
+        // منع بدء الخدمة أكثر من مرة.
         if (_acceptLoopTask is not null)
         {
             return Task.CompletedTask;
@@ -106,7 +106,7 @@ public sealed class ApiServer : IAsyncDisposable
         _uptime = Stopwatch.StartNew();
         _listener.Start();
 
-        // ط±ط¨ط· ط¯ظˆط±ط© ط­ظٹط§ط© API ط¨ط¯ظˆط±ط© ط­ظٹط§ط© ط§ظ„طھط·ط¨ظٹظ‚ ط§ظ„ط±ط¦ظٹط³ظٹط©.
+        // ربط دورة حياة API بدورة حياة التطبيق الرئيسية.
         _internalCts =
             CancellationTokenSource.CreateLinkedTokenSource(
                 externalCancellation);
@@ -120,7 +120,7 @@ public sealed class ApiServer : IAsyncDisposable
     }
 
     /// <summary>
-    /// ط­ظ„ظ‚ط© ط§ط³طھظ‚ط¨ط§ظ„ ط·ظ„ط¨ط§طھ HTTP ظˆطھظˆط²ظٹط¹ ظƒظ„ ط·ظ„ط¨ ط¹ظ„ظ‰ ظ…ظ‡ظ…ط© ظ…ط³طھظ‚ظ„ط©.
+    /// حلقة استقبال طلبات HTTP وتوزيع كل طلب على مهمة مستقلة.
     /// </summary>
     private async Task AcceptLoopAsync(CancellationToken ct)
     {
@@ -130,7 +130,7 @@ public sealed class ApiServer : IAsyncDisposable
 
             try
             {
-                // ط§ظ†طھط¸ط§ط± ط·ظ„ط¨ ط¬ط¯ظٹط¯ ظ…ط¹ ط¯ط¹ظ… ط§ظ„ط¥ظ„ط؛ط§ط،.
+                // انتظار طلب جديد مع دعم الإلغاء.
                 context = await _listener
                     .GetContextAsync()
                     .WaitAsync(ct);
@@ -138,13 +138,13 @@ public sealed class ApiServer : IAsyncDisposable
             catch (OperationCanceledException)
                 when (ct.IsCancellationRequested)
             {
-                // ط¥ظٹظ‚ط§ظپ ط·ط¨ظٹط¹ظٹ ظ†طھظٹط¬ط© ط¥ظ„ط؛ط§ط، ط§ظ„ط®ط¯ظ…ط©.
+                // إيقاف طبيعي نتيجة إلغاء الخدمة.
                 break;
             }
             catch (Exception)
                 when (Volatile.Read(ref _stopped) != 0)
             {
-                // طھظ… ط¥ط؛ظ„ط§ظ‚ ط§ظ„ظ…ط³طھظ…ط¹ ط£ط«ظ†ط§ط، ط§ظ†طھط¸ط§ط± ط·ظ„ط¨ ط¬ط¯ظٹط¯.
+                // تم إغلاق المستمع أثناء انتظار طلب جديد.
                 break;
             }
             catch (Exception ex)
@@ -154,14 +154,14 @@ public sealed class ApiServer : IAsyncDisposable
                 continue;
             }
 
-            // طھط´ط؛ظٹظ„ ظ…ط¹ط§ظ„ط¬ط© ط§ظ„ط·ظ„ط¨ ظ…ط¹ ط§ظ„ط§ط­طھظپط§ط¸ ط¨ط§ظ„ظ…ظ‡ظ…ط© ظ„ظ„ط§ظ†طھط¸ط§ط± ط£ط«ظ†ط§ط، ط§ظ„ط¥ظٹظ‚ط§ظپ.
+            // تشغيل معالجة الطلب مع الاحتفاظ بالمهمة للانتظار أثناء الإيقاف.
             var requestTask = HandleRequestAsync(context, ct);
             _pendingRequests.Add(requestTask);
         }
     }
 
     /// <summary>
-    /// ظٹط¹ط§ظ„ط¬ ط·ظ„ط¨ HTTP ظˆط§ط­ط¯ظ‹ط§ ظˆظٹط±ط³ظ„ ط§ظ„ط§ط³طھط¬ط§ط¨ط© ط§ظ„ظ…ظ†ط§ط³ط¨ط©.
+    /// يعالج طلب HTTP واحدًا ويرسل الاستجابة المناسبة.
     /// </summary>
     private async Task HandleRequestAsync(HttpListenerContext context, CancellationToken ct)
     {
@@ -173,7 +173,7 @@ public sealed class ApiServer : IAsyncDisposable
             response.ContentType =
                 "application/json; charset=utf-8";
 
-            // API ط§ظ„ط­ط§ظ„ظٹط© ظ„ظ„ظ‚ط±ط§ط،ط© ظپظ‚ط·طŒ ظ„ط°ظ„ظƒ ظٹطھظ… ظ‚ط¨ظˆظ„ GET ظپظ‚ط·.
+            // API الحالية للقراءة فقط، لذلك يتم قبول GET فقط.
             if (!string.Equals(
                     request.HttpMethod,
                     "GET",
@@ -187,7 +187,7 @@ public sealed class ApiServer : IAsyncDisposable
                 return;
             }
 
-            // طھظˆط¬ظٹظ‡ ط§ظ„ط·ظ„ط¨ ط­ط³ط¨ ط§ظ„ظ…ط³ط§ط± ط§ظ„ظ…ط·ظ„ظˆط¨.
+            // توجيه الطلب حسب المسار المطلوب.
             switch (request.Url?.AbsolutePath)
             {
                 case "/api/status":
@@ -239,20 +239,20 @@ public sealed class ApiServer : IAsyncDisposable
         }
         finally
         {
-            // ط¥ط؛ظ„ط§ظ‚ ط§ظ„ط§ط³طھط¬ط§ط¨ط© ط­طھظ‰ ط¹ظ†ط¯ ط§ظ†ظ‚ط·ط§ط¹ ط§ظ„ط¹ظ…ظٹظ„ ط£ظˆ ط­ط¯ظˆط« ط®ط·ط£.
+            // إغلاق الاستجابة حتى عند انقطاع العميل أو حدوث خطأ.
             try
             {
                 context.Response.Close();
             }
             catch
             {
-                // ظ‚ط¯ ظٹظƒظˆظ† ط§ظ„ط¹ظ…ظٹظ„ ط£ط؛ظ„ظ‚ ط§ظ„ط§طھطµط§ظ„ ظ…ط³ط¨ظ‚ظ‹ط§.
+                // قد يكون العميل أغلق الاتصال مسبقًا.
             }
         }
     }
 
     /// <summary>
-    /// ظٹط­ظˆظ„ payload ط¥ظ„ظ‰ JSON ظˆظٹط±ط³ظ„ظ‡ ظ…ط¹ ط±ظ…ط² ط§ظ„ط­ط§ظ„ط© ط§ظ„ظ…ط·ظ„ظˆط¨.
+    /// يحول payload إلى JSON ويرسله مع رمز الحالة المطلوب.
     /// </summary>
     private static async Task WriteJsonAsync(HttpListenerResponse response, int statusCode, object payload, CancellationToken ct)
     {
@@ -268,12 +268,12 @@ public sealed class ApiServer : IAsyncDisposable
     }
 
     /// <summary>
-    /// ظٹط¨ظ†ظٹ ط§ط³طھط¬ط§ط¨ط© ط­ط§ظ„ط© ط§ظ„ط®ط§ط¯ظ… ظˆط¹ط¯ط¯ ط§ظ„ط¹ظ…ظ„ط§ط، ظˆظ…ط¯ط© ط§ظ„طھط´ط؛ظٹظ„.
+    /// يبني استجابة حالة الخادم وعدد العملاء ومدة التشغيل.
     /// </summary>
     private ServerStatusResponse BuildStatus() => new("running", _presence.GetSessions().Count, (_uptime?.Elapsed ?? TimeSpan.Zero).ToString(@"hh\:mm\:ss"));
 
     /// <summary>
-    /// ظٹط¨ظ†ظٹ ظ‚ط§ط¦ظ…ط© ط§ظ„ظ…ط³طھط®ط¯ظ…ظٹظ† ط§ظ„ظ…طھطµظ„ظٹظ† ط­ط§ظ„ظٹظ‹ط§.
+    /// يبني قائمة المستخدمين المتصلين حاليًا.
     /// </summary>
     private OnlineUsersResponse BuildUsers()
     {
@@ -282,7 +282,7 @@ public sealed class ApiServer : IAsyncDisposable
     }
 
     /// <summary>
-    /// ظٹط¨ظ†ظٹ ظ…ظ„ط®طµ ط§ظ„ط؛ط±ظپ ط§ظ„ط¬ظ…ط§ط¹ظٹط© ط§ظ„ط­ط§ظ„ظٹط© ظپظ‚ط·.
+    /// يبني ملخص الغرف الجماعية الحالية فقط.
     /// </summary>
     private RoomsResponse BuildRooms()
     {
@@ -298,7 +298,7 @@ public sealed class ApiServer : IAsyncDisposable
     }
 
     /// <summary>
-    /// ظٹط¨ظ†ظٹ ظ…ظ„ط®طµ ط§ظ„ظ…ط­ط§ط¯ط«ط§طھ ط§ظ„طھظٹ طھط¹ظ…ظ„ ظپظٹظ‡ط§ ط§ظ„ظˆط³ط§ط¦ط· ط­ط§ظ„ظٹظ‹ط§.
+    /// يبني ملخص المحادثات التي تعمل فيها الوسائط حاليًا.
     /// </summary>
     private SessionsResponse BuildSessions()
     {
@@ -315,11 +315,11 @@ public sealed class ApiServer : IAsyncDisposable
     }
 
     /// <summary>
-    /// ظٹظˆظ‚ظپ API ط¨ط·ط±ظٹظ‚ط© ظ…ظ†ط¸ظ…ط© ظˆظٹظ†طھط¸ط± ط­ظ„ظ‚ط© ط§ظ„ط§ط³طھظ‚ط¨ط§ظ„ ظˆط§ظ„ط·ظ„ط¨ط§طھ ط§ظ„ط¬ط§ط±ظٹط©.
+    /// يوقف API بطريقة منظمة وينتظر حلقة الاستقبال والطلبات الجارية.
     /// </summary>
     public async Task StopAsync()
     {
-        // ط¶ظ…ط§ظ† طھظ†ظپظٹط° ط§ظ„ط¥ظٹظ‚ط§ظپ ظ…ط±ط© ظˆط§ط­ط¯ط© ظپظ‚ط·.
+        // ضمان تنفيذ الإيقاف مرة واحدة فقط.
         if (Interlocked.Exchange(ref _stopped, 1) != 0)
         {
             return;
@@ -333,10 +333,10 @@ public sealed class ApiServer : IAsyncDisposable
         }
         catch
         {
-            // ط§ظ„ظ…ط³طھظ…ط¹ ظ…طھظˆظ‚ظپ ظ…ط³ط¨ظ‚ظ‹ط§ ط£ظˆ طھظ… طھط­ط±ظٹط±ظ‡.
+            // المستمع متوقف مسبقًا أو تم تحريره.
         }
 
-        // ط§ظ†طھط¸ط§ط± ط§ظ†طھظ‡ط§ط، ط­ظ„ظ‚ط© ط§ظ„ط§ط³طھظ‚ط¨ط§ظ„.
+        // انتظار انتهاء حلقة الاستقبال.
         if (_acceptLoopTask is not null)
         {
             try
@@ -345,11 +345,11 @@ public sealed class ApiServer : IAsyncDisposable
             }
             catch
             {
-                // طھظ… طھط³ط¬ظٹظ„ ط£ط®ط·ط§ط، ط§ظ„ط§ط³طھظ‚ط¨ط§ظ„ ظپظٹ ط§ظ„ط­ظ„ظ‚ط© ظ†ظپط³ظ‡ط§.
+                // تم تسجيل أخطاء الاستقبال في الحلقة نفسها.
             }
         }
 
-        // ط§ظ†طھط¸ط§ط± ط¬ظ…ظٹط¹ ط·ظ„ط¨ط§طھ HTTP ط§ظ„طھظٹ ط¨ط¯ط£طھ ظ‚ط¨ظ„ ط§ظ„ط¥ظٹظ‚ط§ظپ.
+        // انتظار جميع طلبات HTTP التي بدأت قبل الإيقاف.
         try
         {
             await Task.WhenAll(
@@ -357,7 +357,7 @@ public sealed class ApiServer : IAsyncDisposable
         }
         catch
         {
-            // طھظ… طھط³ط¬ظٹظ„ ط£ط®ط·ط§ط، ط§ظ„ط·ظ„ط¨ط§طھ ط£ط«ظ†ط§ط، ظ…ط¹ط§ظ„ط¬طھظ‡ط§.
+            // تم تسجيل أخطاء الطلبات أثناء معالجتها.
         }
 
         try
@@ -366,14 +366,14 @@ public sealed class ApiServer : IAsyncDisposable
         }
         catch
         {
-            // ط§ظ„ظ…ظˆط±ط¯ ظ…ط؛ظ„ظ‚ ظ…ط³ط¨ظ‚ظ‹ط§.
+            // المورد مغلق مسبقًا.
         }
 
         _internalCts?.Dispose();
     }
 
     /// <summary>
-    /// ظٹط­ط±ط± ظ…ظˆط§ط±ط¯ ApiServer ط¹ظ†ط¯ ط§ظ†طھظ‡ط§ط، ط¯ظˆط±ط© ط­ظٹط§طھظ‡.
+    /// يحرر موارد ApiServer عند انتهاء دورة حياته.
     /// </summary>
     public async ValueTask DisposeAsync() => await StopAsync();
 }
