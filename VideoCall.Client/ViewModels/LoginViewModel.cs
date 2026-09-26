@@ -5,62 +5,52 @@ using VideoCall.Client.Contracts;
 
 namespace VideoCall.Client.ViewModels;
 
-/// äãæĞÌ ÇáÚÑÖ (ViewModel) ÇáÎÇÕ ÈäÇİĞÉ ÊÓÌíá ÇáÏÎæá.
-/// íÊÚÇãá ãÚ ãÏÎáÇÊ ÇáãÓÊÎÏã¡ æíÊÍßã ÈØáÈ ÇáÇÊÕÇá ÚÈÑ ÇáÔÈßÉ æÅÏÇÑÉ ÍÇáÉ ÇáÔÇÔÉ.
+/// <summary>
+/// ÅÏÇÑÉ ÍÇáÉ æÇÌåÉ ÊÓÌíá ÇáÏÎæá æÇáÇÊÕÇá ÈÎÏãÇÊ ÇáÔÈßÉ.
+/// </summary>
 public sealed class LoginViewModel : ViewModelBase, IDisposable
 {
-    // ÎÏãÇÊ æÓÇÆØ ÇáÇÊÕÇá æÇáÍŞæá ÇáÎÇÕÉ ÈÍÇáÉ ÇáäãæĞÌ
     private readonly INetworkClient _network;
     private string _serverAddress = "127.0.0.1";
     private string _username = string.Empty;
     private string _status = string.Empty;
     private bool _busy;
 
-    // ÚäæÇä ÇáÎÇÏã ÇáãÑÇÏ ÇáÇÊÕÇá Èå
     public string ServerAddress
     {
         get => _serverAddress;
         set => SetField(ref _serverAddress, value);
     }
-
-    // ÇÓã ÇáãÓÊÎÏã ÇáãÏÎá
     public string Username
     {
         get => _username;
         set => SetField(ref _username, value);
     }
-
-    // äÕ ÍÇáÉ ÇáÇÊÕÇá Ãæ ÑÓÇÆá ÇáÎØÃ ÇáãÚÑæÖÉ ááãÓÊÎÏã
     public string Status
     {
         get => _status;
         private set => SetField(ref _status, value);
     }
-
-    // ãÄÔÑ íÈíä ãÇ ÅĞÇ ßÇäÊ åäÇß ÚãáíÉ ÇÊÕÇá ÌÇÑíÉ áãäÚ ÊßÑÇÑ ÇáÖÛØ
     public bool IsBusy
     {
         get => _busy;
         private set => SetField(ref _busy, value);
     }
 
-    // ÍÏË íÊã ÅØáÇŞå ÚäÏ äÌÇÍ ÚãáíÉ ÊÓÌíá ÇáÏÎæá ááÇäÊŞÇá ááÔÇÔÉ ÇáÊÇáíÉ
     public event Action? LoginSucceeded;
-    /// ãäÔÆ ÇáßáÇÓ: íÍŞä ÎÏãÉ ÇáÔÈßÉ æíÔÊÑß İí ÇÓÊŞÈÇá ÑÏæÏ ÇáÎÇÏã.
+
     public LoginViewModel(INetworkClient network)
     {
         _network = network;
-        // ÇáÇÔÊÑÇß İí ÍÏË ÇÓÊŞÈÇá ÑÏ ÊÓÌíá ÇáÏÎæá ãä ÇáÎÇÏã
         _network.LoginResponseReceived += OnLoginResponse;
     }
-    /// ÅÑÓÇá ØáÈ ÊÓÌíá ÇáÏÎæá ÈÔßá ÛíÑ ãÊÒÇãä (Async).
+
+    /// <summary>
+    /// ÇáÊÍŞŞ ãä ÇáÍŞæá¡ ÅäÔÇÁ ÇáÇÊÕÇá ÈÇáÎÇÏã Åä áÒã ÇáÃãÑ¡ æÅÑÓÇá ÈíÇäÇÊ ÇáÇÚÊãÇÏ.
+    /// </summary>
     public async Task LoginAsync(string password)
     {
-        // ãäÚ ÊäİíĞ ÇáØáÈ ÅĞÇ ßÇäÊ åäÇß ÚãáíÉ ÌÇÑíÉ ÈÇáİÚá
-        if (IsBusy)
-            return;
-
-        // ÇáÊÍŞŞ ãä ÇßÊãÇá ßÇİÉ ÇáÈíÇäÇÊ ÇáãØáæÈÉ ŞÈá ÈÏÁ ÇáÇÊÕÇá
+        if (IsBusy) return;
         if (string.IsNullOrWhiteSpace(ServerAddress) ||
             string.IsNullOrWhiteSpace(Username) ||
             string.IsNullOrWhiteSpace(password))
@@ -71,8 +61,6 @@ public sealed class LoginViewModel : ViewModelBase, IDisposable
 
         IsBusy = true;
         Status = "ÌÇÑí ÇáÇÊÕÇá ÈÇáÎÇÏã...";
-
-        // ÇáÊÃßÏ ãä æÌæÏ ÇÊÕÇá İÚáí ÈÇáÎÇÏã Ãæ ÅäÔÇÆå
         if (!_network.IsConnected)
         {
             var connected = await _network.ConnectAsync(ServerAddress.Trim());
@@ -84,18 +72,17 @@ public sealed class LoginViewModel : ViewModelBase, IDisposable
             }
         }
 
-        // ÅÑÓÇá ÈíÇäÇÊ ÇáãÓÊÎÏã æßáãÉ ÇáãÑæÑ ÚÈÑ ÇáÔÈßÉ
         await _network.LoginAsync(Username.Trim(), password);
     }
-    /// ãÚÇáÌ ÍÏË ÇÓÊáÇã ÑÏ ÊÓÌíá ÇáÏÎæá ãä ÇáÎÇÏã.
+
+    /// <summary>
+    /// ãÚÇáÌÉ ÑÏ ÇáÎÇÏã æÊÍÏíË ÍÇáÉ æÇÌåÉ ÇáãÓÊÎÏã ÈäÇÁğ Úáì ÇáäÊíÌÉ.
+    /// </summary>
     private void OnLoginResponse(LoginResponsePayload response)
     {
-        // ÖãÇä ÊäİíĞ ÇáÊÚÏíáÇÊ Úáì æÇÌåÉ ÇáãÓÊÎÏã ÏÇÎá ãÓáß ÇáÜ UI ÇáÎÇÕ ÈÜ WPF
         OnUi(() =>
         {
             IsBusy = false;
-
-            // İí ÍÇá äÌÇÍ ÇáÏÎæá: ÅÚÇÏÉ ÖÈØ ÇáÍÇáÇÊ æÅØáÇŞ ÍÏË ÇáäÌÇÍ
             if (response.Success)
             {
                 Status = string.Empty;
@@ -103,7 +90,6 @@ public sealed class LoginViewModel : ViewModelBase, IDisposable
                 return;
             }
 
-            // İí ÍÇá ÇáİÔá: ÊÍÏíÏ ÓÈÈ ÇáÎØÃ æÚÑÖ ÇáÑÓÇáÉ ÇáãäÇÓÈÉ
             Status = response.ErrorCode switch
             {
                 ErrorCodes.InvalidCredentials => "ÈíÇäÇÊ ÇáÏÎæá ÛíÑ ÕÍíÍÉ.",
@@ -112,15 +98,16 @@ public sealed class LoginViewModel : ViewModelBase, IDisposable
             };
         });
     }
-    /// ÅáÛÇÁ ÇáÇÔÊÑÇß İí ÇáÃÍÏÇË ÚäÏ ÇáÊÎáÕ ãä ÇáßÇÆä áãäÚ ÇáÊÓÑíÈ İí ÇáĞÇßÑÉ (Memory Leaks).
+
     public void Dispose() => _network.LoginResponseReceived -= OnLoginResponse;
-    /// ÏÇáÉ ãÓÇÚÏÉ áÖãÇä ÊäİíĞ ÇáÚãáíÇÊ ÇáÈÑãÌíÉ İí ÇáãÓáß ÇáÑÆíÓí ááæÇÌåÉ (UI Thread).
+
+    /// <summary>
+    /// ÖãÇä ÊäİíĞ ÇáÚãáíÇÊ Úáì ÎíØ æÇÌåÉ ÇáãÓÊÎÏã (UI Dispatcher).
+    /// </summary>
     private static void OnUi(Action action)
     {
         var dispatcher = Application.Current?.Dispatcher;
-        if (dispatcher is null || dispatcher.CheckAccess())
-            action();
-        else
-            dispatcher.BeginInvoke(action);
+        if (dispatcher is null || dispatcher.CheckAccess()) action();
+        else dispatcher.BeginInvoke(action);
     }
 }
