@@ -3,30 +3,72 @@ using VideoCall.Server.Domain.Logging;
 namespace VideoCall.Server.Infrastructure.Logging;
 
 /// <summary>
-/// Console-based <see cref="IAppLogger"/> implementation. Output format and
-/// coloring are unchanged from the original static <c>Logger</c> class; the
-/// only difference is that this is now an ordinary, injectable instance
-/// instead of a global static, so the composition root decides its lifetime
-/// (registered as a singleton in <c>Program.cs</c>) instead of every
-/// consumer reaching for a static field.
+/// ÊäİíĞ ÎÏãÉ ÇáÊÓÌíá ÇáãæÌåÉ Åáì äÇİĞÉ Console.
+///
+/// íØÈŞ åĞÇ ÇáäæÚ ÇáÚŞÏ IAppLogger¡ æíæİÑ ËáÇË ÏÑÌÇÊ ÃÓÇÓíÉ ááÊÓÌíá:
+/// - Info: ãÚáæãÇÊ ÇáÊÔÛíá æÇáÃÍÏÇË ÇáØÈíÚíÉ.
+/// - Warn: ÊÍĞíÑÇÊ áÇ ÊæŞİ ÇáÎÇÏã áßäåÇ ÊÍÊÇÌ Åáì ãÊÇÈÚÉ.
+/// - Error: ÃÎØÇÁ ÊÍÊÇÌ Åáì ÊÍáíá Ãæ ÊÏÎá ãä İÑíŞ ÇáÊØæíÑ.
+///
+/// Êã ÊÕãíã ÇáÎÏãÉ ßßÇÆä ŞÇÈá ááÍŞä (Injectable Service) ÈÏá ÇÓÊÎÏÇã
+/// Logger ÚÇã ãä ÇáäæÚ static. æíÓãÍ Ğáß ÈÅÏÇÑÉ ÏæÑÉ ÍíÇÉ ÇáÎÏãÉ ãä ÎáÇá
+/// Composition Root¡ ßãÇ íÓåá ÇÓÊÈÏÇáåÇ ÈÊäİíĞ ÂÎÑ İí ÇáÇÎÊÈÇÑÇÊ Ãæ ÇáÅäÊÇÌ¡
+/// ãËá ÎÏãÉ ÊÓÌíá ãÑßÒíÉ Ãæ äÙÇã ãÑÇŞÈÉ ãÄÓÓí.
+///
+/// íÊã ÊÓÌíá åĞå ÇáÎÏãÉ ÚÇÏÉğ ßÜ Singleton ÏÇÎá Program.cs ÍÊì ÊÓÊÎÏã
+/// ÌãíÚ ãßæäÇÊ ÇáÎÇÏã äİÓ ŞäÇÉ ÇáÊÓÌíá.
 /// </summary>
 public sealed class ConsoleAppLogger : IAppLogger
 {
+    // Şİá ãÔÊÑß íãäÚ ÊÏÇÎá ãÎÑÌÇÊ ÇáãåÇã ÇáãÊæÇÒíÉ ÏÇÎá äÇİĞÉ Console.
+    // åĞÇ ãåã áÃä ÇáÎÇÏã íÚÇáÌ ÚÏÉ ÌáÓÇÊ æÇÊÕÇáÇÊ İí ÇáæŞÊ äİÓå.
     private readonly object _consoleLock = new();
 
-    public void Info(string message) => Write("INFO", message, ConsoleColor.Gray);
+    /// <summary>
+    /// íÓÌá ÑÓÇáÉ ãÚáæãÇÊíÉ Úä ÍÏË ØÈíÚí ÏÇÎá ÇáäÙÇã.
+    /// </summary>
+    /// <param name="message">äÕ ÇáÑÓÇáÉ ÇáãÑÇÏ ÊÓÌíáåÇ.</param>
+    public void Info(string message) =>
+        Write("INFO", message, ConsoleColor.Gray);
 
-    public void Warn(string message) => Write("WARN", message, ConsoleColor.Yellow);
+    /// <summary>
+    /// íÓÌá ÊÍĞíÑğÇ áÇ íÄÏí ÈÇáÖÑæÑÉ Åáì ÅíŞÇİ ÇáÎÏãÉ.
+    /// </summary>
+    /// <param name="message">äÕ ÇáÊÍĞíÑ ÇáãÑÇÏ ÊÓÌíáå.</param>
+    public void Warn(string message) =>
+        Write("WARN", message, ConsoleColor.Yellow);
 
-    public void Error(string message) => Write("ERROR", message, ConsoleColor.Red);
+    /// <summary>
+    /// íÓÌá ÎØÃ ÍÏË ÃËäÇÁ ÊäİíĞ ÅÍÏì ÚãáíÇÊ ÇáäÙÇã.
+    /// </summary>
+    /// <param name="message">ÊİÇÕíá ÇáÎØÃ ÇáãÑÇÏ ÊÓÌíáåÇ.</param>
+    public void Error(string message) =>
+        Write("ERROR", message, ConsoleColor.Red);
 
-    private void Write(string level, string message, ConsoleColor color)
+    /// <summary>
+    /// íßÊÈ ÑÓÇáÉ ãæÍÏÉ Åáì äÇİĞÉ Console ãÚ ãÓÊæì ÇáÊÓÌíá æÇááæä æÇáæŞÊ.
+    /// </summary>
+    /// <param name="level">ãÓÊæì ÇáÑÓÇáÉ ãËá INFO Ãæ WARN Ãæ ERROR.</param>
+    /// <param name="message">äÕ ÇáÑÓÇáÉ.</param>
+    /// <param name="color">Çááæä ÇáãÓÊÎÏã áÊãííÒ ãÓÊæì ÇáÑÓÇáÉ.</param>
+    private void Write(
+        string level,
+        string message,
+        ConsoleColor color)
     {
+        // ÖãÇä ÊäİíĞ ÚãáíÉ ÇáßÊÇÈÉ ßÇãáÉ Ïæä ÊÏÇÎá ãÚ Thread ÂÎÑ.
         lock (_consoleLock)
         {
+            // ÍİÙ Çááæä ÇáÍÇáí ÍÊì áÇ ÊÄËÑ ÇáÑÓÇáÉ Úáì ÇáãÎÑÌÇÊ ÇááÇÍŞÉ.
             var previous = Console.ForegroundColor;
+
             Console.ForegroundColor = color;
-            Console.WriteLine($"[{level}] {DateTime.Now:HH:mm:ss} {message}");
+
+            // ÇÓÊÎÏÇã ÊäÓíŞ ãæÍÏ íÓåá ŞÑÇÁÊå æÇáÈÍË Úäå ÏÇÎá ÓÌáÇÊ ÇáÊÔÛíá.
+            Console.WriteLine(
+                $"[{level}] {DateTime.Now:HH:mm:ss} {message}");
+
+            // ÇÓÊÚÇÏÉ Çááæä ÇáÓÇÈŞ ÈÚÏ ÇäÊåÇÁ ÇáßÊÇÈÉ.
             Console.ForegroundColor = previous;
         }
     }

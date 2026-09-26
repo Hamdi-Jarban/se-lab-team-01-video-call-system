@@ -1,23 +1,57 @@
 namespace VideoCall.Server.Domain.Logging;
 
 /// <summary>
-/// Abstraction over server-side logging.
-/// <para>
-/// Software-engineering concept: <b>Dependency Inversion Principle (DIP)</b>.
-/// The original project used a <c>static class Logger</c>, which is a hidden,
-/// global dependency that every class silently reaches out to. That makes
-/// unit testing hard (you cannot substitute a fake logger) and couples every
-/// consumer to one concrete implementation (Console output). By depending on
-/// this interface instead, high-level classes (ClientSession, the media
-/// relay, the server host) no longer know or care *how* logging happens -
-/// only Infrastructure.Logging.ConsoleAppLogger knows that detail.
-/// </para>
+/// ÚŞÏ ãæÍÏ áÎÏãÇÊ ÊÓÌíá ÇáÃÍÏÇË æÇáÃÎØÇÁ ÇáÎÇÕÉ ÈÇáÎÇÏã.
+///
+/// íÍÏÏ åĞÇ ÇáÚŞÏ ÇáÚãáíÇÊ ÇáÃÓÇÓíÉ ÇáÊí ÊÍÊÇÌåÇ ØÈŞÇÊ ÇáÊØÈíŞ æÇáÈäíÉ
+/// ÇáÊÍÊíÉ áÊÓÌíá ÇáãÚáæãÇÊ æÇáÊÍĞíÑÇÊ æÇáÃÎØÇÁ¡ Ïæä ÑÈØåÇ ÈØÑíŞÉ ÇáÊÓÌíá
+/// ÇáİÚáíÉ Ãæ ÈãßÇä ÊÎÒíä ÇáÓÌáÇÊ.
+///
+/// íÚÊãÏ ÇáÊÕãíã Úáì ãÈÏÃ ÚßÓ ÇÊÌÇå ÇáÇÚÊãÇÏ
+/// (Dependency Inversion Principle)¡ ÈÍíË ÊÚÊãÏ ÇáØÈŞÇÊ ÇáÚáíÇ Úáì åĞå
+/// ÇáæÇÌåÉ¡ ÈíäãÇ íÊã æÖÚ ÊİÇÕíá ÇáÊäİíĞ ÏÇÎá ØÈŞÉ Infrastructure.
+///
+/// İí ÇáÊäİíĞ ÇáÍÇáí ÊÓÊÎÏã ÇáÎÏãÉ ConsoleAppLogger áÅÙåÇÑ ÇáÓÌáÇÊ İí
+/// äÇİĞÉ Console¡ æáßä íãßä ÇÓÊÈÏÇáåÇ áÇÍŞğÇ ÈÊäİíĞ ÂÎÑ Ïæä ÊÚÏíá ÇáßáÇÓÇÊ
+/// ÇáÊí ÊÚÊãÏ Úáì IAppLogger¡ ãËá:
+/// - ÎÏãÉ ÊÓÌíá ãÑßÒíÉ.
+/// - ãáİ ãÍáí Ãæ ŞÇÚÏÉ ÈíÇäÇÊ.
+/// - ãäÕÉ ãÑÇŞÈÉ æÊäÈíåÇÊ.
+/// - ÊäİíĞ æåãí Fake Logger áÇÎÊÈÇÑÇÊ ÇáæÍÏÉ.
+///
+/// ÇÓÊÎÏÇã æÇÌåÉ ÈÏá Logger ãä ÇáäæÚ static íÍŞŞ ÇáİæÇÆÏ ÇáÊÇáíÉ:
+/// - ÊŞáíá ÇáÇÚÊãÇÏíÇÊ ÇáÎİíÉ ÏÇÎá ÇáßáÇÓÇÊ.
+/// - ÊÓåíá ßÊÇÈÉ ÇÎÊÈÇÑÇÊ ÇáæÍÏÉ.
+/// - ÅãßÇäíÉ ÇÚÊÑÇÖ ÇáÓÌáÇÊ æÇáÊÍŞŞ ãäåÇ ÃËäÇÁ ÇáÇÎÊÈÇÑ.
+/// - İÕá ãäØŞ ÇáÊØÈíŞ Úä ÊİÇÕíá ÇáÅÎÑÇÌ æÇáÊÎÒíä.
+/// - ÊæÍíÏ ÃÓáæÈ ÇáÊÓÌíá İí ÌãíÚ ÃÌÒÇÁ ÇáÎÇÏã.
 /// </summary>
 public interface IAppLogger
 {
+    /// <summary>
+    /// íÓÌá ãÚáæãÉ ãÑÊÈØÉ ÈÍÏË ÊÔÛíáí ØÈíÚí ÏÇÎá ÇáäÙÇã.
+    /// </summary>
+    /// <param name="message">
+    /// äÕ ÇáãÚáæãÉ ÇáãÑÇÏ ÊÓÌíáåÇ.
+    /// </param>
     void Info(string message);
 
+    /// <summary>
+    /// íÓÌá ÊÍĞíÑğÇ íÔíÑ Åáì Óáæß ÛíÑ ãÊæŞÚ Ãæ ÍÇáÉ ÊÍÊÇÌ Åáì ãÊÇÈÚÉ¡
+    /// Ïæä Ãä íÚäí Ğáß ÈÇáÖÑæÑÉ ÊæŞİ ÇáÎÏãÉ.
+    /// </summary>
+    /// <param name="message">
+    /// äÕ ÇáÊÍĞíÑ ÇáãÑÇÏ ÊÓÌíáå.
+    /// </param>
     void Warn(string message);
 
+    /// <summary>
+    /// íÓÌá ÎØÃ ÍÏË ÃËäÇÁ ÊäİíĞ ÚãáíÉ ÏÇÎá ÇáÎÇÏã.
+    /// íÓÊÎÏã åĞÇ ÇáãÓÊæì ááÍÇáÇÊ ÇáÊí ŞÏ ÊÄËÑ Úáì ÇáÇÊÕÇá Ãæ ÇáæÙíİÉ
+    /// ÇáÍÇáíÉ æÊÍÊÇÌ Åáì ÊÍáíá ãä İÑíŞ ÇáÊØæíÑ Ãæ ÇáÊÔÛíá.
+    /// </summary>
+    /// <param name="message">
+    /// ÊİÇÕíá ÇáÎØÃ ÇáãÑÇÏ ÊÓÌíáåÇ.
+    /// </param>
     void Error(string message);
 }
