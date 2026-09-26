@@ -1,20 +1,20 @@
 <Window x:Class="VideoCall.Client.Views.RoomInviteWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="ÏÚæÉ Åáì ÛÑÝÉ ÌãÇÚíÉ" Width="360" Height="220"
+        Title="Ø¯Ø¹ÙˆØ© Ø¥Ù„Ù‰ ØºØ±ÙØ© Ø¬Ù…Ø§Ø¹ÙŠØ©" Width="360" Height="220"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
     
-    <!-- äÇÝÐÉ ãäÈËÞÉ (Popup) ËÇÈÊÉ ÇáÍÌã ÊÙåÑ Ýí ãäÊÕÝ ÇáäÇÝÐÉ ÇáãÇáßÉ áåÇ ÚäÏ ÊáÞí ÏÚæÉ -->
+    <!-- Ù†Ø§ÙØ°Ø© Ù…Ù†Ø¨Ø«Ù‚Ø© (Popup) Ø«Ø§Ø¨ØªØ© Ø§Ù„Ø­Ø¬Ù… ØªØ¸Ù‡Ø± ÙÙŠ Ù…Ù†ØªØµÙ Ø§Ù„Ù†Ø§ÙØ°Ø© Ø§Ù„Ù…Ø§Ù„ÙƒØ© Ù„Ù‡Ø§ Ø¹Ù†Ø¯ ØªÙ„Ù‚ÙŠ Ø¯Ø¹ÙˆØ© -->
     <Border Background="#0F172A" Padding="24">
         <StackPanel>
-            <!-- äÕ ÇáÏÚæÉ: Êã ÅÚØÇÄå ÇÓãÇð (x:Name) áíÊã ÊãÑíÑ ÇÓã ÇáãÑÓá Ãæ ÑÞã ÇáÛÑÝÉ Åáíå ãÈÇÔÑÉ ãä ÇáßæÏ ÇáÎáÝí -->
+            <!-- Ù†Øµ Ø§Ù„Ø¯Ø¹ÙˆØ©: ØªÙ… Ø¥Ø¹Ø·Ø§Ø¤Ù‡ Ø§Ø³Ù…Ø§Ù‹ (x:Name) Ù„ÙŠØªÙ… ØªÙ…Ø±ÙŠØ± Ø§Ø³Ù… Ø§Ù„Ù…Ø±Ø³Ù„ Ø£Ùˆ Ø±Ù‚Ù… Ø§Ù„ØºØ±ÙØ© Ø¥Ù„ÙŠÙ‡ Ù…Ø¨Ø§Ø´Ø±Ø© Ù…Ù† Ø§Ù„ÙƒÙˆØ¯ Ø§Ù„Ø®Ù„ÙÙŠ -->
             <TextBlock x:Name="InviteText" Foreground="#F8FAFC" FontSize="18"
                        TextAlignment="Center" TextWrapping="Wrap" Margin="0,0,0,24" />
             
-            <!-- ÃÒÑÇÑ ÇáÇÓÊÌÇÈÉ: ãÑÊÈØÉ ÈÃÍÏÇË ãÈÇÔÑÉ (Click) Ýí ÇáßæÏ ÇáÎáÝí áÅÑÌÇÚ ÇáäÊíÌÉ (ÞÈæá/ÑÝÖ) æÅÛáÇÞ ÇáäÇÝÐÉ ÈÓÑÚÉ -->
+            <!-- Ø£Ø²Ø±Ø§Ø± Ø§Ù„Ø§Ø³ØªØ¬Ø§Ø¨Ø©: Ù…Ø±ØªØ¨Ø·Ø© Ø¨Ø£Ø­Ø¯Ø§Ø« Ù…Ø¨Ø§Ø´Ø±Ø© (Click) ÙÙŠ Ø§Ù„ÙƒÙˆØ¯ Ø§Ù„Ø®Ù„ÙÙŠ Ù„Ø¥Ø±Ø¬Ø§Ø¹ Ø§Ù„Ù†ØªÙŠØ¬Ø© (Ù‚Ø¨ÙˆÙ„/Ø±ÙØ¶) ÙˆØ¥ØºÙ„Ø§Ù‚ Ø§Ù„Ù†Ø§ÙØ°Ø© Ø¨Ø³Ø±Ø¹Ø© -->
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                <Button Content="ÞÈæá" Width="110" Margin="6" Style="{StaticResource SuccessButton}" Click="Accept_Click" />
-                <Button Content="ÑÝÖ" Width="110" Margin="6" Style="{StaticResource DangerButton}" Click="Reject_Click" />
+                <Button Content="Ù‚Ø¨ÙˆÙ„" Width="110" Margin="6" Style="{StaticResource SuccessButton}" Click="Accept_Click" />
+                <Button Content="Ø±ÙØ¶" Width="110" Margin="6" Style="{StaticResource DangerButton}" Click="Reject_Click" />
             </StackPanel>
         </StackPanel>
     </Border>
