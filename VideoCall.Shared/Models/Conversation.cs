@@ -1,37 +1,38 @@
 ﻿namespace VideoCall.Shared.Models;
 
-// يعتمد نظام طلب الاتصال على هذا النموذج لإنشاء محادثة خاصة
-// بحالة Created ومنع الطلبات المتزامنة.
-
+// نوع المحادثة: خاصة بين مستخدمين أو جماعية
 public enum ConversationType
 {
-    Private,
-    Group
+    Private, // محادثة خاصة
+    Group    // محادثة جماعية
 }
 
+// الحالات التي يمكن أن تمر بها المحادثة
 public enum ConversationState
 {
-    Created,
-    Active,
-    Ended
+    Created, // تم إنشاء المحادثة
+    Active,  // المحادثة نشطة
+    Ended    // انتهت المحادثة
 }
 
+// يمثل محادثة داخل النظام
 public sealed class Conversation
 {
+    // المعرّف الخاص بالمحادثة
     public string Id { get; init; } = string.Empty;
 
+    // نوع المحادثة
     public ConversationType Type { get; init; }
 
+    // اسم المستخدم المسؤول عن المحادثة
     public string Host { get; set; } = string.Empty;
 
-    // Issue #3 يستخدم Members للتحقق من انشغال caller أو callee.
-    public HashSet<string> Members { get; } =
-        new(StringComparer.OrdinalIgnoreCase);
+    // مجموعة أعضاء المحادثة مع تجاهل اختلاف حالة الأحرف
+    public HashSet<string> Members { get; } = new(StringComparer.OrdinalIgnoreCase);
 
-    // Issue #3 ينشئ الطلب أولاً بحالة Created.
-    public ConversationState State { get; set; } =
-        ConversationState.Created;
+    // الحالة الحالية للمحادثة
+    public ConversationState State { get; set; } = ConversationState.Created;
 
-    // يعتمد عليه كود الوسائط، وليس ضمن نطاق Issue #3.
+    // معرّف الوسائط المرتبطة بالمحادثة إن وجد
     public Guid? MediaId { get; set; }
 }

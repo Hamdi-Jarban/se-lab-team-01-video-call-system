@@ -1,10 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <!-- إعدادات المشروع الأساسية -->
   <PropertyGroup>
+
+    <!-- تحديد إصدار .NET المستخدم في المشروع -->
     <TargetFramework>net8.0</TargetFramework>
+
+    <!-- تفعيل الاستيرادات التلقائية للمكتبات الشائعة -->
     <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- تفعيل فحص القيم التي يمكن أن تكون null -->
     <Nullable>enable</Nullable>
+
+    <!-- تحديد المساحة الاسمية الرئيسية للمشروع -->
     <RootNamespace>VideoCall.Shared</RootNamespace>
+
   </PropertyGroup>
 
 </Project>
