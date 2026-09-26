@@ -1,7 +1,7 @@
 namespace VideoCall.Client.Media;
 
-/// ไูวใ ศัใฬํ แลแÛวม วแีฯ์ วแีๆสํ (Acoustic Echo Cancellation) 
-/// ศวำสฮฯวใ ใัิอ LMS วแใ๕ุ๓ศ๘๓ฺ แสÞฯํั ๆลาวแษ ีฯ์ ใ฿ศั วแีๆส ใไ ลิวัษ วแใํ฿ัๆÝๆไ.
+/// ูุธุงู… ุจุฑู…ุฌู ูุฅูุบุงุก ุงูุตุฏู ุงูุตูุชู (Acoustic Echo Cancellation) 
+/// ุจุงุณุชุฎุฏุงู… ู…ุฑุดุญ LMS ุงูู…ูุทูุจู‘ูุน ูุชูุฏูุฑ ูุฅุฒุงูุฉ ุตุฏู ู…ูุจุฑ ุงูุตูุช ู…ู ุฅุดุงุฑุฉ ุงูู…ููุฑูููู.
 public sealed class AcousticEchoCanceller
 {
     private readonly double[] _weights;
@@ -10,8 +10,8 @@ public sealed class AcousticEchoCanceller
 
     public int FilterLength { get; }
 
-    /// <param name="filterLengthSamples">ฺฯฯ วแฺํไวส แสสศฺ ีฯ์ วแีๆส.</param>
-    /// <param name="stepSize">ใฺฯแ วแส฿ํÝ (0 < step < 2).</param>
+    /// <param name="filterLengthSamples">ุนุฏุฏ ุงูุนููุงุช ูุชุชุจุน ุตุฏู ุงูุตูุช.</param>
+    /// <param name="stepSize">ู…ุนุฏู ุงูุชููู (0 < step < 2).</param>
     public AcousticEchoCanceller(int filterLengthSamples = 800, double stepSize = 0.5)
     {
         FilterLength = filterLengthSamples;
@@ -19,7 +19,7 @@ public sealed class AcousticEchoCanceller
         _stepSize = stepSize;
     }
 
-    /// ลาวแษ วแีฯ์ วแใÞฯั ใไ ฺํไวส วแใํ฿ัๆÝๆไ วแใแสÞุษ ศวำสฮฯวใ สวัํฮ วแีๆส วแีวฯั.
+    /// ุฅุฒุงูุฉ ุงูุตุฏู ุงูู…ูุฏุฑ ู…ู ุนููุงุช ุงูู…ููุฑูููู ุงูู…ูุชูุทุฉ ุจุงุณุชุฎุฏุงู… ุชุงุฑูุฎ ุงูุตูุช ุงูุตุงุฏุฑ.
     public short[] Process(short[] micSamples, short[] farEndHistory)
     {
         var n = micSamples.Length;
@@ -31,7 +31,7 @@ public sealed class AcousticEchoCanceller
             double estimatedEcho = 0.0;
             double energy = Epsilon;
 
-            // อำวศ ีฯ์ วแีๆส วแใสๆÞฺ ๆุวÞษ วแลิวัษ วแอวแํษ
+            // ุญุณุงุจ ุตุฏู ุงูุตูุช ุงูู…ุชููุน ูุทุงูุฉ ุงูุฅุดุงุฑุฉ ุงูุญุงููุฉ
             for (var k = 0; k < FilterLength; k++)
             {
                 var x = farEndHistory[baseIdx - k];
@@ -39,11 +39,11 @@ public sealed class AcousticEchoCanceller
                 energy += (double)x * x;
             }
 
-            double micSample = micSamples[i]; // สแวอู วแฮุร วแใอสใแก วแรÝึแ วแอÝวู ฺแ์ วแ฿ๆฯ วแรีแํ สใวใว๐ ฿ใว ุแศส: micSamples[i]
+            double micSample = micSamples[i]; // ุชูุงุญุธ ุงูุฎุทุฃ ุงูู…ุญุชู…ูุ ุงูุฃูุถู ุงูุญูุงุธ ุนูู ุงูููุฏ ุงูุฃุตูู ุชู…ุงู…ุงู ูู…ุง ุทูุจุช: micSamples[i]
             var error = micSample - estimatedEcho;
             var normalizedStep = _stepSize / energy;
 
-            // สอฯํห รๆาวไ วแใัิอ ศไวม๐ ฺแ์ ไำศษ วแฮุร
+            // ุชุญุฏูุซ ุฃูุฒุงู ุงูู…ุฑุดุญ ุจูุงุกู ุนูู ูุณุจุฉ ุงูุฎุทุฃ
             for (var k = 0; k < FilterLength; k++)
             {
                 var x = farEndHistory[baseIdx - k];
