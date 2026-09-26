@@ -3,7 +3,7 @@ using VideoCall.Shared.Models;
 namespace VideoCall.Server.Domain.Repositories;
 
 /// <summary>
-/// íÍÏÏ äÊÇÆÌ ÚãáíÇÊ ÅäÔÇÁ æÊÚÏíá ÇáãÍÇÏËÇÊ æÇáÛÑİ.
+/// ÙŠØ­Ø¯Ø¯ Ù†ØªØ§Ø¦Ø¬ Ø¹Ù…Ù„ÙŠØ§Øª Ø¥Ù†Ø´Ø§Ø¡ ÙˆØªØ¹Ø¯ÙŠÙ„ Ø§Ù„Ù…Ø­Ø§Ø¯Ø«Ø§Øª ÙˆØ§Ù„ØºØ±Ù.
 /// </summary>
 public enum ConversationOperation
 {
@@ -20,92 +20,92 @@ public enum ConversationOperation
 }
 
 /// <summary>
-/// íÏíÑ ÇáãÍÇÏËÇÊ ÇáÎÇÕÉ æÇáÛÑİ ÇáÌãÇÚíÉ æÃÚÖÇÁåÇ æÍÇáÉ ÇáæÓÇÆØ ÇáãÑÊÈØÉ ÈåÇ.
+/// ÙŠØ¯ÙŠØ± Ø§Ù„Ù…Ø­Ø§Ø¯Ø«Ø§Øª Ø§Ù„Ø®Ø§ØµØ© ÙˆØ§Ù„ØºØ±Ù Ø§Ù„Ø¬Ù…Ø§Ø¹ÙŠØ© ÙˆØ£Ø¹Ø¶Ø§Ø¡Ù‡Ø§ ÙˆØ­Ø§Ù„Ø© Ø§Ù„ÙˆØ³Ø§Ø¦Ø· Ø§Ù„Ù…Ø±ØªØ¨Ø·Ø© Ø¨Ù‡Ø§.
 /// </summary>
 public interface IConversationRepository
 {
     /// <summary>
-    /// íäÔÆ ãÍÇÏËÉ ÎÇÕÉ Èíä ãÓÊÎÏãíä.
+    /// ÙŠÙ†Ø´Ø¦ Ù…Ø­Ø§Ø¯Ø«Ø© Ø®Ø§ØµØ© Ø¨ÙŠÙ† Ù…Ø³ØªØ®Ø¯Ù…ÙŠÙ†.
     /// </summary>
     ConversationOperation CreatePrivate(string conversationId, string caller, string callee, out Conversation? conversation);
 
     /// <summary>
-    /// íäÔÆ ÛÑİÉ ÌãÇÚíÉ ÌÏíÏÉ.
+    /// ÙŠÙ†Ø´Ø¦ ØºØ±ÙØ© Ø¬Ù…Ø§Ø¹ÙŠØ© Ø¬Ø¯ÙŠØ¯Ø©.
     /// </summary>
     ConversationOperation CreateGroup(string conversationId, string host, out Conversation? conversation);
 
     /// <summary>
-    /// íÖíİ ÚÖæğÇ Åáì ãÍÇÏËÉ Ãæ ÛÑİÉ.
+    /// ÙŠØ¶ÙŠÙ Ø¹Ø¶ÙˆÙ‹Ø§ Ø¥Ù„Ù‰ Ù…Ø­Ø§Ø¯Ø«Ø© Ø£Ùˆ ØºØ±ÙØ©.
     /// </summary>
     ConversationOperation AddMember(string conversationId, string requestingUser, string memberUsername, out Conversation? conversation);
 
     /// <summary>
-    /// íÖíİ ãÓÊÎÏãğÇ Åáì ÛÑİÉ ãæÌæÏÉ.
+    /// ÙŠØ¶ÙŠÙ Ù…Ø³ØªØ®Ø¯Ù…Ù‹Ø§ Ø¥Ù„Ù‰ ØºØ±ÙØ© Ù…ÙˆØ¬ÙˆØ¯Ø©.
     /// </summary>
     ConversationOperation Join(string conversationId, string username, out Conversation? conversation);
 
     /// <summary>
-    /// íÒíá ãÓÊÎÏãğÇ ãä ÇáãÍÇÏËÉ.
+    /// ÙŠØ²ÙŠÙ„ Ù…Ø³ØªØ®Ø¯Ù…Ù‹Ø§ Ù…Ù† Ø§Ù„Ù…Ø­Ø§Ø¯Ø«Ø©.
     /// </summary>
     ConversationOperation Leave(string conversationId, string username, out Conversation? conversation, out bool removed);
 
     /// <summary>
-    /// íÈÏÃ ÇáæÓÇÆØ ÏÇÎá ÇáãÍÇÏËÉ.
+    /// ÙŠØ¨Ø¯Ø£ Ø§Ù„ÙˆØ³Ø§Ø¦Ø· Ø¯Ø§Ø®Ù„ Ø§Ù„Ù…Ø­Ø§Ø¯Ø«Ø©.
     /// </summary>
     ConversationOperation StartMedia(string conversationId, string username, out Conversation? conversation);
 
     /// <summary>
-    /// íäåí ãÍÇÏËÉ ÎÇÕÉ æíÚíÏ ÃÚÖÇÁåÇ.
+    /// ÙŠÙ†Ù‡ÙŠ Ù…Ø­Ø§Ø¯Ø«Ø© Ø®Ø§ØµØ© ÙˆÙŠØ¹ÙŠØ¯ Ø£Ø¹Ø¶Ø§Ø¡Ù‡Ø§.
     /// </summary>
     ConversationOperation EndPrivate(string conversationId, string username, out IReadOnlyList<string> members);
 
     /// <summary>
-    /// íäåí ãÍÇÏËÉ Ãæ ÛÑİÉ ÌãÇÚíÉ.
+    /// ÙŠÙ†Ù‡ÙŠ Ù…Ø­Ø§Ø¯Ø«Ø© Ø£Ùˆ ØºØ±ÙØ© Ø¬Ù…Ø§Ø¹ÙŠØ©.
     /// </summary>
     ConversationOperation End(string conversationId, string username, out IReadOnlyList<string> members);
 
     /// <summary>
-    /// íİÚøá ÇáæÓÇÆØ áãÓÊÎÏã ÚÖæ İí ÇáãÍÇÏËÉ.
+    /// ÙŠÙØ¹Ù‘Ù„ Ø§Ù„ÙˆØ³Ø§Ø¦Ø· Ù„Ù…Ø³ØªØ®Ø¯Ù… Ø¹Ø¶Ùˆ ÙÙŠ Ø§Ù„Ù…Ø­Ø§Ø¯Ø«Ø©.
     /// </summary>
     ConversationOperation ActivateMedia(string conversationId, string username, out Conversation? conversation);
 
     /// <summary>
-    /// íæŞİ ÇáæÓÇÆØ ÏÇÎá ÇáãÍÇÏËÉ.
+    /// ÙŠÙˆÙ‚Ù Ø§Ù„ÙˆØ³Ø§Ø¦Ø· Ø¯Ø§Ø®Ù„ Ø§Ù„Ù…Ø­Ø§Ø¯Ø«Ø©.
     /// </summary>
     ConversationOperation StopMedia(string conversationId, string username, out Conversation? conversation);
 
     /// <summary>
-    /// íÈÍË Úä ãÍÇÏËÉ ÈÇÓÊÎÏÇã ãÚÑİåÇ.
+    /// ÙŠØ¨Ø­Ø« Ø¹Ù† Ù…Ø­Ø§Ø¯Ø«Ø© Ø¨Ø§Ø³ØªØ®Ø¯Ø§Ù… Ù…Ø¹Ø±ÙÙ‡Ø§.
     /// </summary>
     bool TryGet(string conversationId, out Conversation conversation);
 
     /// <summary>
-    /// íÊÍŞŞ ãä ÚÖæíÉ ãÓÊÎÏã İí ãÍÇÏËÉ.
+    /// ÙŠØªØ­Ù‚Ù‚ Ù…Ù† Ø¹Ø¶ÙˆÙŠØ© Ù…Ø³ØªØ®Ø¯Ù… ÙÙŠ Ù…Ø­Ø§Ø¯Ø«Ø©.
     /// </summary>
     bool IsMember(string conversationId, string username);
 
     /// <summary>
-    /// íÈÍË Úä ãÍÇÏËÉ äÔØÉ ÈÇÓÊÎÏÇã ãÚÑİ ÇáæÓÇÆØ.
+    /// ÙŠØ¨Ø­Ø« Ø¹Ù† Ù…Ø­Ø§Ø¯Ø«Ø© Ù†Ø´Ø·Ø© Ø¨Ø§Ø³ØªØ®Ø¯Ø§Ù… Ù…Ø¹Ø±Ù Ø§Ù„ÙˆØ³Ø§Ø¦Ø·.
     /// </summary>
     bool TryGetActiveConversationByMediaId(Guid mediaId, out Conversation conversation);
 
     /// <summary>
-    /// íÊÍŞŞ ãä ÊÔÛíá ÇáæÓÇÆØ ÏÇÎá ãÍÇÏËÉ.
+    /// ÙŠØªØ­Ù‚Ù‚ Ù…Ù† ØªØ´ØºÙŠÙ„ Ø§Ù„ÙˆØ³Ø§Ø¦Ø· Ø¯Ø§Ø®Ù„ Ù…Ø­Ø§Ø¯Ø«Ø©.
     /// </summary>
     bool IsMediaActive(string conversationId);
 
     /// <summary>
-    /// íÚíÏ äÓÎÉ ãä ÃÚÖÇÁ ÇáãÍÇÏËÉ ÇáÍÇáíÉ.
+    /// ÙŠØ¹ÙŠØ¯ Ù†Ø³Ø®Ø© Ù…Ù† Ø£Ø¹Ø¶Ø§Ø¡ Ø§Ù„Ù…Ø­Ø§Ø¯Ø«Ø© Ø§Ù„Ø­Ø§Ù„ÙŠØ©.
     /// </summary>
     IReadOnlyList<string> GetMembersSnapshot(string conversationId);
 
     /// <summary>
-    /// íÒíá ÇáãÓÊÎÏã ãä ÌãíÚ ÇáãÍÇÏËÇÊ ÇáãÑÊÈØ ÈåÇ.
+    /// ÙŠØ²ÙŠÙ„ Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù… Ù…Ù† Ø¬Ù…ÙŠØ¹ Ø§Ù„Ù…Ø­Ø§Ø¯Ø«Ø§Øª Ø§Ù„Ù…Ø±ØªØ¨Ø· Ø¨Ù‡Ø§.
     /// </summary>
     IReadOnlyList<Conversation> RemoveUserFromAll(string username);
 
     /// <summary>
-    /// íÚíÏ äÓÎÉ ááŞÑÇÁÉ İŞØ ãä ÌãíÚ ÇáãÍÇÏËÇÊ ÇáÍÇáíÉ.
+    /// ÙŠØ¹ÙŠØ¯ Ù†Ø³Ø®Ø© Ù„Ù„Ù‚Ø±Ø§Ø¡Ø© ÙÙ‚Ø· Ù…Ù† Ø¬Ù…ÙŠØ¹ Ø§Ù„Ù…Ø­Ø§Ø¯Ø«Ø§Øª Ø§Ù„Ø­Ø§Ù„ÙŠØ©.
     /// </summary>
     IReadOnlyList<Conversation> GetAllSnapshot();
 }

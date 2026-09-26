@@ -8,9 +8,9 @@ using VideoCall.Shared.Models;
 namespace VideoCall.Server.Application;
 
 /// <summary>
-/// íæÌøå ÑÓÇÆá ÈÑæÊæßæá TCP Åáì ÇáÚãáíÇÊ ÇáãäÇÓÈÉ ÏÇÎá ÇáÊØÈíŞ¡
-/// ãËá ÊÓÌíá ÇáÏÎæá æÇáãßÇáãÇÊ æÅÏÇÑÉ ÇáÛÑİ.
-/// íÚÊãÏ Úáì æÇÌåÇÊ Domain æáÇ íÊÚÇãá ãÚ Socket ãÈÇÔÑÉ.
+/// ÙŠÙˆØ¬Ù‘Ù‡ Ø±Ø³Ø§Ø¦Ù„ Ø¨Ø±ÙˆØªÙˆÙƒÙˆÙ„ TCP Ø¥Ù„Ù‰ Ø§Ù„Ø¹Ù…Ù„ÙŠØ§Øª Ø§Ù„Ù…Ù†Ø§Ø³Ø¨Ø© Ø¯Ø§Ø®Ù„ Ø§Ù„ØªØ·Ø¨ÙŠÙ‚ØŒ
+/// Ù…Ø«Ù„ ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„ ÙˆØ§Ù„Ù…ÙƒØ§Ù„Ù…Ø§Øª ÙˆØ¥Ø¯Ø§Ø±Ø© Ø§Ù„ØºØ±Ù.
+/// ÙŠØ¹ØªÙ…Ø¯ Ø¹Ù„Ù‰ ÙˆØ§Ø¬Ù‡Ø§Øª Domain ÙˆÙ„Ø§ ÙŠØªØ¹Ø§Ù…Ù„ Ù…Ø¹ Socket Ù…Ø¨Ø§Ø´Ø±Ø©.
 /// </summary>
 public sealed class ProtocolRouter : IProtocolMessageDispatcher, IConnectionLifecycleHandler
 {
@@ -164,7 +164,7 @@ public sealed class ProtocolRouter : IProtocolMessageDispatcher, IConnectionLife
             MessageType.CallRequest,
             new CallRequestPayload(callId, caller, callee));
         await SendToUserAsync(callee, callRequestMessage, ct);
-        // ÅÚÇÏÉ ãÚÑİ ÇáãßÇáãÉ ÇáĞí ÃäÔÃå ÇáÎÇÏã Åáì ÇáÚãíá.
+        // Ø¥Ø¹Ø§Ø¯Ø© Ù…Ø¹Ø±Ù Ø§Ù„Ù…ÙƒØ§Ù„Ù…Ø© Ø§Ù„Ø°ÙŠ Ø£Ù†Ø´Ø£Ù‡ Ø§Ù„Ø®Ø§Ø¯Ù… Ø¥Ù„Ù‰ Ø§Ù„Ø¹Ù…ÙŠÙ„.
         await SendToUserAsync(caller, callRequestMessage, ct);
     }
 
@@ -354,8 +354,8 @@ public sealed class ProtocolRouter : IProtocolMessageDispatcher, IConnectionLife
     }
 
     /// <summary>
-    /// íäİĞ ÊäÙíİ ÌáÓÉ TCP ÈÚÏ ÇäŞØÇÚ ÇáÚãíá¡ ãËá ÅÒÇáÉ ÇáÍÖæÑ
-    /// æÅÎÑÇÌ ÇáãÓÊÎÏã ãä ÇáãÍÇÏËÇÊ æÅÈáÇÛ ÇáÃÚÖÇÁ ÇáãÊÈŞíä.
+    /// ÙŠÙ†ÙØ° ØªÙ†Ø¸ÙŠÙ Ø¬Ù„Ø³Ø© TCP Ø¨Ø¹Ø¯ Ø§Ù†Ù‚Ø·Ø§Ø¹ Ø§Ù„Ø¹Ù…ÙŠÙ„ØŒ Ù…Ø«Ù„ Ø¥Ø²Ø§Ù„Ø© Ø§Ù„Ø­Ø¶ÙˆØ±
+    /// ÙˆØ¥Ø®Ø±Ø§Ø¬ Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù… Ù…Ù† Ø§Ù„Ù…Ø­Ø§Ø¯Ø«Ø§Øª ÙˆØ¥Ø¨Ù„Ø§Øº Ø§Ù„Ø£Ø¹Ø¶Ø§Ø¡ Ø§Ù„Ù…ØªØ¨Ù‚ÙŠÙ†.
     /// </summary>
     public async Task HandleDisconnectAsync(IClientHandler session, CancellationToken ct)
     {
@@ -379,12 +379,12 @@ public sealed class ProtocolRouter : IProtocolMessageDispatcher, IConnectionLife
         foreach (var session in _presence.GetSessions())
         {
             try { await session.SendAsync(message, ct); }
-            catch { /* íÊã ÊäÙíİ ÇáÌáÓÉ ãä ÎáÇá ClientSession. */ }
+            catch { /* ÙŠØªÙ… ØªÙ†Ø¸ÙŠÙ Ø§Ù„Ø¬Ù„Ø³Ø© Ù…Ù† Ø®Ù„Ø§Ù„ ClientSession. */ }
         }
     }
 
     /// <summary>
-    /// íÍÇæá ÅÑÓÇá ÑÓÇáÉ Åáì ãÓÊÎÏã ãÍÏÏ¡ æíÓÌá ÇáÎØÃ ÚäÏ ÊÚĞÑ ÇáÅÑÓÇá.
+    /// ÙŠØ­Ø§ÙˆÙ„ Ø¥Ø±Ø³Ø§Ù„ Ø±Ø³Ø§Ù„Ø© Ø¥Ù„Ù‰ Ù…Ø³ØªØ®Ø¯Ù… Ù…Ø­Ø¯Ø¯ØŒ ÙˆÙŠØ³Ø¬Ù„ Ø§Ù„Ø®Ø·Ø£ Ø¹Ù†Ø¯ ØªØ¹Ø°Ø± Ø§Ù„Ø¥Ø±Ø³Ø§Ù„.
     /// </summary>
     private async Task SendToUserAsync(string username, Message message, CancellationToken ct)
     {
