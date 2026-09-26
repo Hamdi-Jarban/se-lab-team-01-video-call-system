@@ -8,78 +8,78 @@ using VideoCall.Shared.Networking;
 namespace VideoCall.Server.Infrastructure.Networking;
 
 /// <summary>
-/// يمثل اتصال TCP واحدًا بين الخادم وعميل واحد.
+/// ظٹظ…ط«ظ„ ط§طھطµط§ظ„ TCP ظˆط§ط­ط¯ظ‹ط§ ط¨ظٹظ† ط§ظ„ط®ط§ط¯ظ… ظˆط¹ظ…ظٹظ„ ظˆط§ط­ط¯.
 ///
-/// تملك هذه الفئة موارد الاتصال وتدير دورة حياته، بما في ذلك:
-/// - قراءة الرسائل المؤطرة عبر TcpMessageReaderWriter.
-/// - تمرير الرسائل إلى IProtocolMessageDispatcher.
-/// - إرسال الردود إلى العميل.
-/// - ربط الجلسة بالمستخدم بعد نجاح المصادقة.
-/// - إغلاق الاتصال وإبلاغ سجل الجلسات.
+/// طھظ…ظ„ظƒ ظ‡ط°ظ‡ ط§ظ„ظپط¦ط© ظ…ظˆط§ط±ط¯ ط§ظ„ط§طھطµط§ظ„ ظˆطھط¯ظٹط± ط¯ظˆط±ط© ط­ظٹط§طھظ‡طŒ ط¨ظ…ط§ ظپظٹ ط°ظ„ظƒ:
+/// - ظ‚ط±ط§ط،ط© ط§ظ„ط±ط³ط§ط¦ظ„ ط§ظ„ظ…ط¤ط·ط±ط© ط¹ط¨ط± TcpMessageReaderWriter.
+/// - طھظ…ط±ظٹط± ط§ظ„ط±ط³ط§ط¦ظ„ ط¥ظ„ظ‰ IProtocolMessageDispatcher.
+/// - ط¥ط±ط³ط§ظ„ ط§ظ„ط±ط¯ظˆط¯ ط¥ظ„ظ‰ ط§ظ„ط¹ظ…ظٹظ„.
+/// - ط±ط¨ط· ط§ظ„ط¬ظ„ط³ط© ط¨ط§ظ„ظ…ط³طھط®ط¯ظ… ط¨ط¹ط¯ ظ†ط¬ط§ط­ ط§ظ„ظ…طµط§ط¯ظ‚ط©.
+/// - ط¥ط؛ظ„ط§ظ‚ ط§ظ„ط§طھطµط§ظ„ ظˆط¥ط¨ظ„ط§ط؛ ط³ط¬ظ„ ط§ظ„ط¬ظ„ط³ط§طھ.
 ///
-/// لا تحتوي ClientSession على منطق تسجيل الدخول أو المكالمات أو الغرف.
-/// وظيفتها تقتصر على النقل ودورة حياة الاتصال، بينما يحدد ProtocolRouter
-/// معنى الرسائل وينفذ منطق الأعمال.
+/// ظ„ط§ طھط­طھظˆظٹ ClientSession ط¹ظ„ظ‰ ظ…ظ†ط·ظ‚ طھط³ط¬ظٹظ„ ط§ظ„ط¯ط®ظˆظ„ ط£ظˆ ط§ظ„ظ…ظƒط§ظ„ظ…ط§طھ ط£ظˆ ط§ظ„ط؛ط±ظپ.
+/// ظˆط¸ظٹظپطھظ‡ط§ طھظ‚طھطµط± ط¹ظ„ظ‰ ط§ظ„ظ†ظ‚ظ„ ظˆط¯ظˆط±ط© ط­ظٹط§ط© ط§ظ„ط§طھطµط§ظ„طŒ ط¨ظٹظ†ظ…ط§ ظٹط­ط¯ط¯ ProtocolRouter
+/// ظ…ط¹ظ†ظ‰ ط§ظ„ط±ط³ط§ط¦ظ„ ظˆظٹظ†ظپط° ظ…ظ†ط·ظ‚ ط§ظ„ط£ط¹ظ…ط§ظ„.
 ///
-/// يحقق هذا الفصل مبدأ المسؤولية الواحدة (Single Responsibility Principle)
-/// ومبدأ عكس اتجاه الاعتماد (Dependency Inversion Principle)، إذ تعتمد
-/// الجلسة على واجهات Domain بدل الاعتماد المباشر على ServerHost أو منطق الأعمال.
+/// ظٹط­ظ‚ظ‚ ظ‡ط°ط§ ط§ظ„ظپطµظ„ ظ…ط¨ط¯ط£ ط§ظ„ظ…ط³ط¤ظˆظ„ظٹط© ط§ظ„ظˆط§ط­ط¯ط© (Single Responsibility Principle)
+/// ظˆظ…ط¨ط¯ط£ ط¹ظƒط³ ط§طھط¬ط§ظ‡ ط§ظ„ط§ط¹طھظ…ط§ط¯ (Dependency Inversion Principle)طŒ ط¥ط° طھط¹طھظ…ط¯
+/// ط§ظ„ط¬ظ„ط³ط© ط¹ظ„ظ‰ ظˆط§ط¬ظ‡ط§طھ Domain ط¨ط¯ظ„ ط§ظ„ط§ط¹طھظ…ط§ط¯ ط§ظ„ظ…ط¨ط§ط´ط± ط¹ظ„ظ‰ ServerHost ط£ظˆ ظ…ظ†ط·ظ‚ ط§ظ„ط£ط¹ظ…ط§ظ„.
 ///
-/// تطبق الجلسة إغلاقًا منظمًا وقابلًا للتكرار بأمان؛ حيث يمكن استدعاء
-/// CloseAsync من حلقة القراءة أو من ServerHost دون تنفيذ التنظيف مرتين.
+/// طھط·ط¨ظ‚ ط§ظ„ط¬ظ„ط³ط© ط¥ط؛ظ„ط§ظ‚ظ‹ط§ ظ…ظ†ط¸ظ…ظ‹ط§ ظˆظ‚ط§ط¨ظ„ظ‹ط§ ظ„ظ„طھظƒط±ط§ط± ط¨ط£ظ…ط§ظ†ط› ط­ظٹط« ظٹظ…ظƒظ† ط§ط³طھط¯ط¹ط§ط،
+/// CloseAsync ظ…ظ† ط­ظ„ظ‚ط© ط§ظ„ظ‚ط±ط§ط،ط© ط£ظˆ ظ…ظ† ServerHost ط¯ظˆظ† طھظ†ظپظٹط° ط§ظ„طھظ†ط¸ظٹظپ ظ…ط±طھظٹظ†.
 /// </summary>
 public sealed class ClientSession : IClientHandler, IAsyncDisposable
 {
-    // اتصال TCP الخاص بالعميل.
+    // ط§طھطµط§ظ„ TCP ط§ظ„ط®ط§طµ ط¨ط§ظ„ط¹ظ…ظٹظ„.
     private readonly TcpClient _client;
 
-    // مسؤول عن قراءة وكتابة الرسائل المؤطرة عبر TCP.
+    // ظ…ط³ط¤ظˆظ„ ط¹ظ† ظ‚ط±ط§ط،ط© ظˆظƒطھط§ط¨ط© ط§ظ„ط±ط³ط§ط¦ظ„ ط§ظ„ظ…ط¤ط·ط±ط© ط¹ط¨ط± TCP.
     private readonly TcpMessageReaderWriter _wire;
 
-    // موزع الرسائل الذي يفسر LoginRequest وبقية رسائل البروتوكول.
+    // ظ…ظˆط²ط¹ ط§ظ„ط±ط³ط§ط¦ظ„ ط§ظ„ط°ظٹ ظٹظپط³ط± LoginRequest ظˆط¨ظ‚ظٹط© ط±ط³ط§ط¦ظ„ ط§ظ„ط¨ط±ظˆطھظˆظƒظˆظ„.
     private readonly IProtocolMessageDispatcher _dispatcher;
 
-    // سجل الجلسات الذي يتم إشعاره عند إغلاق الاتصال.
+    // ط³ط¬ظ„ ط§ظ„ط¬ظ„ط³ط§طھ ط§ظ„ط°ظٹ ظٹطھظ… ط¥ط´ط¹ط§ط±ظ‡ ط¹ظ†ط¯ ط¥ط؛ظ„ط§ظ‚ ط§ظ„ط§طھطµط§ظ„.
     private readonly IClientSessionRegistry _registry;
 
-    // خدمة تسجيل الأحداث والأخطاء.
+    // ط®ط¯ظ…ط© طھط³ط¬ظٹظ„ ط§ظ„ط£ط­ط¯ط§ط« ظˆط§ظ„ط£ط®ط·ط§ط،.
     private readonly IAppLogger _logger;
 
-    // مصدر إلغاء خاص بهذه الجلسة.
+    // ظ…طµط¯ط± ط¥ظ„ط؛ط§ط، ط®ط§طµ ط¨ظ‡ط°ظ‡ ط§ظ„ط¬ظ„ط³ط©.
     private readonly CancellationTokenSource _stop = new();
 
-    // علامة ذرية تمنع إغلاق الجلسة أكثر من مرة.
+    // ط¹ظ„ط§ظ…ط© ط°ط±ظٹط© طھظ…ظ†ط¹ ط¥ط؛ظ„ط§ظ‚ ط§ظ„ط¬ظ„ط³ط© ط£ظƒط«ط± ظ…ظ† ظ…ط±ط©.
     private int _closed;
 
     /// <summary>
-    /// رمز فريد للجلسة يتم إرساله بعد نجاح تسجيل الدخول.
-    /// يستخدم أيضًا للتحقق من حزم UDP الخاصة بالوسائط.
+    /// ط±ظ…ط² ظپط±ظٹط¯ ظ„ظ„ط¬ظ„ط³ط© ظٹطھظ… ط¥ط±ط³ط§ظ„ظ‡ ط¨ط¹ط¯ ظ†ط¬ط§ط­ طھط³ط¬ظٹظ„ ط§ظ„ط¯ط®ظˆظ„.
+    /// ظٹط³طھط®ط¯ظ… ط£ظٹط¶ظ‹ط§ ظ„ظ„طھط­ظ‚ظ‚ ظ…ظ† ط­ط²ظ… UDP ط§ظ„ط®ط§طµط© ط¨ط§ظ„ظˆط³ط§ط¦ط·.
     /// </summary>
     public Guid SessionToken { get; } = Guid.NewGuid();
 
     /// <summary>
-    /// اسم المستخدم المرتبط بالجلسة بعد نجاح المصادقة.
-    /// تكون القيمة null قبل اكتمال تسجيل الدخول.
+    /// ط§ط³ظ… ط§ظ„ظ…ط³طھط®ط¯ظ… ط§ظ„ظ…ط±طھط¨ط· ط¨ط§ظ„ط¬ظ„ط³ط© ط¨ط¹ط¯ ظ†ط¬ط§ط­ ط§ظ„ظ…طµط§ط¯ظ‚ط©.
+    /// طھظƒظˆظ† ط§ظ„ظ‚ظٹظ…ط© null ظ‚ط¨ظ„ ط§ظƒطھظ…ط§ظ„ طھط³ط¬ظٹظ„ ط§ظ„ط¯ط®ظˆظ„.
     /// </summary>
     public string? Username { get; private set; }
 
     /// <summary>
-    /// يحدد ما إذا كان المستخدم قد اجتاز مرحلة المصادقة.
+    /// ظٹط­ط¯ط¯ ظ…ط§ ط¥ط°ط§ ظƒط§ظ† ط§ظ„ظ…ط³طھط®ط¯ظ… ظ‚ط¯ ط§ط¬طھط§ط² ظ…ط±ط­ظ„ط© ط§ظ„ظ…طµط§ط¯ظ‚ط©.
     /// </summary>
     public bool IsAuthenticated => Username is not null;
 
     /// <summary>
-    /// عنوان الشبكة البعيد الخاص بالعميل لأغراض التشخيص والتسجيل.
+    /// ط¹ظ†ظˆط§ظ† ط§ظ„ط´ط¨ظƒط© ط§ظ„ط¨ط¹ظٹط¯ ط§ظ„ط®ط§طµ ط¨ط§ظ„ط¹ظ…ظٹظ„ ظ„ط£ط؛ط±ط§ط¶ ط§ظ„طھط´ط®ظٹطµ ظˆط§ظ„طھط³ط¬ظٹظ„.
     /// </summary>
     public EndPoint? RemoteEndPoint => _client.Client.RemoteEndPoint;
 
     /// <summary>
-    /// ينشئ جلسة TCP ويحقن مكونات الاتصال والتوزيع والتسجيل.
+    /// ظٹظ†ط´ط¦ ط¬ظ„ط³ط© TCP ظˆظٹط­ظ‚ظ† ظ…ظƒظˆظ†ط§طھ ط§ظ„ط§طھطµط§ظ„ ظˆط§ظ„طھظˆط²ظٹط¹ ظˆط§ظ„طھط³ط¬ظٹظ„.
     /// </summary>
-    /// <param name="client">اتصال TCP المقبول من الخادم.</param>
-    /// <param name="dispatcher">موزع الرسائل الواردة.</param>
-    /// <param name="registry">سجل الجلسات المفتوحة.</param>
-    /// <param name="logger">خدمة تسجيل الأحداث والأخطاء.</param>
+    /// <param name="client">ط§طھطµط§ظ„ TCP ط§ظ„ظ…ظ‚ط¨ظˆظ„ ظ…ظ† ط§ظ„ط®ط§ط¯ظ….</param>
+    /// <param name="dispatcher">ظ…ظˆط²ط¹ ط§ظ„ط±ط³ط§ط¦ظ„ ط§ظ„ظˆط§ط±ط¯ط©.</param>
+    /// <param name="registry">ط³ط¬ظ„ ط§ظ„ط¬ظ„ط³ط§طھ ط§ظ„ظ…ظپطھظˆط­ط©.</param>
+    /// <param name="logger">ط®ط¯ظ…ط© طھط³ط¬ظٹظ„ ط§ظ„ط£ط­ط¯ط§ط« ظˆط§ظ„ط£ط®ط·ط§ط،.</param>
     public ClientSession(
         TcpClient client,
         IProtocolMessageDispatcher dispatcher,
@@ -98,17 +98,17 @@ public sealed class ClientSession : IClientHandler, IAsyncDisposable
         _logger = logger
             ?? throw new ArgumentNullException(nameof(logger));
 
-        // إنشاء قارئ وكاتب البروتوكول فوق stream الخاص باتصال TCP.
+        // ط¥ظ†ط´ط§ط، ظ‚ط§ط±ط¦ ظˆظƒط§طھط¨ ط§ظ„ط¨ط±ظˆطھظˆظƒظˆظ„ ظپظˆظ‚ stream ط§ظ„ط®ط§طµ ط¨ط§طھطµط§ظ„ TCP.
         _wire = new TcpMessageReaderWriter(client.GetStream());
 
-        // تقليل التأخير في رسائل التحكم مثل LoginRequest وLoginResponse.
+        // طھظ‚ظ„ظٹظ„ ط§ظ„طھط£ط®ظٹط± ظپظٹ ط±ط³ط§ط¦ظ„ ط§ظ„طھط­ظƒظ… ظ…ط«ظ„ LoginRequest ظˆLoginResponse.
         _client.NoDelay = true;
     }
 
     /// <summary>
-    /// يربط الجلسة باسم المستخدم بعد نجاح التحقق من بيانات الدخول.
+    /// ظٹط±ط¨ط· ط§ظ„ط¬ظ„ط³ط© ط¨ط§ط³ظ… ط§ظ„ظ…ط³طھط®ط¯ظ… ط¨ط¹ط¯ ظ†ط¬ط§ط­ ط§ظ„طھط­ظ‚ظ‚ ظ…ظ† ط¨ظٹط§ظ†ط§طھ ط§ظ„ط¯ط®ظˆظ„.
     /// </summary>
-    /// <param name="username">اسم المستخدم الذي تمت مصادقته.</param>
+    /// <param name="username">ط§ط³ظ… ط§ظ„ظ…ط³طھط®ط¯ظ… ط§ظ„ط°ظٹ طھظ…طھ ظ…طµط§ط¯ظ‚طھظ‡.</param>
     public void SetAuthenticatedUsername(string username)
     {
         if (string.IsNullOrWhiteSpace(username))
@@ -122,17 +122,17 @@ public sealed class ClientSession : IClientHandler, IAsyncDisposable
     }
 
     /// <summary>
-    /// يبدأ حلقة قراءة الرسائل الواردة من العميل.
+    /// ظٹط¨ط¯ط£ ط­ظ„ظ‚ط© ظ‚ط±ط§ط،ط© ط§ظ„ط±ط³ط§ط¦ظ„ ط§ظ„ظˆط§ط±ط¯ط© ظ…ظ† ط§ظ„ط¹ظ…ظٹظ„.
     ///
-    /// كل رسالة يتم تمريرها إلى ProtocolRouter، الذي يحدد نوعها وينفذ
-    /// العملية المناسبة، مثل تسجيل الدخول أو إدارة المكالمات والغرف.
+    /// ظƒظ„ ط±ط³ط§ظ„ط© ظٹطھظ… طھظ…ط±ظٹط±ظ‡ط§ ط¥ظ„ظ‰ ProtocolRouterطŒ ط§ظ„ط°ظٹ ظٹط­ط¯ط¯ ظ†ظˆط¹ظ‡ط§ ظˆظٹظ†ظپط°
+    /// ط§ظ„ط¹ظ…ظ„ظٹط© ط§ظ„ظ…ظ†ط§ط³ط¨ط©طŒ ظ…ط«ظ„ طھط³ط¬ظٹظ„ ط§ظ„ط¯ط®ظˆظ„ ط£ظˆ ط¥ط¯ط§ط±ط© ط§ظ„ظ…ظƒط§ظ„ظ…ط§طھ ظˆط§ظ„ط؛ط±ظپ.
     /// </summary>
     /// <param name="serverCancellation">
-    /// رمز الإلغاء القادم من دورة حياة الخادم.
+    /// ط±ظ…ط² ط§ظ„ط¥ظ„ط؛ط§ط، ط§ظ„ظ‚ط§ط¯ظ… ظ…ظ† ط¯ظˆط±ط© ط­ظٹط§ط© ط§ظ„ط®ط§ط¯ظ….
     /// </param>
     public async Task RunAsync(CancellationToken serverCancellation)
     {
-        // دمج إلغاء الخادم مع إلغاء هذه الجلسة بشكل مستقل.
+        // ط¯ظ…ط¬ ط¥ظ„ط؛ط§ط، ط§ظ„ط®ط§ط¯ظ… ظ…ط¹ ط¥ظ„ط؛ط§ط، ظ‡ط°ظ‡ ط§ظ„ط¬ظ„ط³ط© ط¨ط´ظƒظ„ ظ…ط³طھظ‚ظ„.
         using var linked =
             CancellationTokenSource.CreateLinkedTokenSource(
                 serverCancellation,
@@ -142,16 +142,16 @@ public sealed class ClientSession : IClientHandler, IAsyncDisposable
         {
             while (!linked.IsCancellationRequested)
             {
-                // قراءة رسالة واحدة من العميل.
+                // ظ‚ط±ط§ط،ط© ط±ط³ط§ظ„ط© ظˆط§ط­ط¯ط© ظ…ظ† ط§ظ„ط¹ظ…ظٹظ„.
                 var message = await _wire.ReadMessageAsync(linked.Token);
 
-                // null تعني أن الطرف الآخر أغلق الاتصال.
+                // null طھط¹ظ†ظٹ ط£ظ† ط§ظ„ط·ط±ظپ ط§ظ„ط¢ط®ط± ط£ط؛ظ„ظ‚ ط§ظ„ط§طھطµط§ظ„.
                 if (message is null)
                 {
                     break;
                 }
 
-                // تمرير الرسالة إلى طبقة التطبيق لمعالجتها.
+                // طھظ…ط±ظٹط± ط§ظ„ط±ط³ط§ظ„ط© ط¥ظ„ظ‰ ط·ط¨ظ‚ط© ط§ظ„طھط·ط¨ظٹظ‚ ظ„ظ…ط¹ط§ظ„ط¬طھظ‡ط§.
                 await _dispatcher.DispatchAsync(
                     this,
                     message,
@@ -161,7 +161,7 @@ public sealed class ClientSession : IClientHandler, IAsyncDisposable
         catch (OperationCanceledException)
             when (linked.IsCancellationRequested)
         {
-            // إغلاق طبيعي نتيجة إلغاء الخادم أو الجلسة.
+            // ط¥ط؛ظ„ط§ظ‚ ط·ط¨ظٹط¹ظٹ ظ†طھظٹط¬ط© ط¥ظ„ط؛ط§ط، ط§ظ„ط®ط§ط¯ظ… ط£ظˆ ط§ظ„ط¬ظ„ط³ط©.
         }
         catch (IOException ex)
         {
@@ -180,23 +180,23 @@ public sealed class ClientSession : IClientHandler, IAsyncDisposable
         }
         finally
         {
-            // ضمان تنفيذ التنظيف مهما كان سبب انتهاء الحلقة.
+            // ط¶ظ…ط§ظ† طھظ†ظپظٹط° ط§ظ„طھظ†ط¸ظٹظپ ظ…ظ‡ظ…ط§ ظƒط§ظ† ط³ط¨ط¨ ط§ظ†طھظ‡ط§ط، ط§ظ„ط­ظ„ظ‚ط©.
             await CloseAsync();
         }
     }
 
     /// <summary>
-    /// يرسل رسالة إلى العميل عبر اتصال TCP.
+    /// ظٹط±ط³ظ„ ط±ط³ط§ظ„ط© ط¥ظ„ظ‰ ط§ظ„ط¹ظ…ظٹظ„ ط¹ط¨ط± ط§طھطµط§ظ„ TCP.
     /// </summary>
-    /// <param name="message">الرسالة التي سيتم إرسالها.</param>
-    /// <param name="ct">رمز الإلغاء الخاص بعملية الإرسال.</param>
+    /// <param name="message">ط§ظ„ط±ط³ط§ظ„ط© ط§ظ„طھظٹ ط³ظٹطھظ… ط¥ط±ط³ط§ظ„ظ‡ط§.</param>
+    /// <param name="ct">ط±ظ…ط² ط§ظ„ط¥ظ„ط؛ط§ط، ط§ظ„ط®ط§طµ ط¨ط¹ظ…ظ„ظٹط© ط§ظ„ط¥ط±ط³ط§ظ„.</param>
     public async Task SendAsync(
         Message message,
         CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(message);
 
-        // إلغاء الإرسال عند إلغاء الطلب أو إغلاق الجلسة.
+        // ط¥ظ„ط؛ط§ط، ط§ظ„ط¥ط±ط³ط§ظ„ ط¹ظ†ط¯ ط¥ظ„ط؛ط§ط، ط§ظ„ط·ظ„ط¨ ط£ظˆ ط¥ط؛ظ„ط§ظ‚ ط§ظ„ط¬ظ„ط³ط©.
         using var linked =
             CancellationTokenSource.CreateLinkedTokenSource(
                 ct,
@@ -221,14 +221,14 @@ public sealed class ClientSession : IClientHandler, IAsyncDisposable
             _logger.Warn(
                 $"Failed to send {message.Type} to {Describe()}: {ex.Message}");
 
-            // فشل الإرسال يعني أن الجلسة لم تعد صالحة غالبًا.
+            // ظپط´ظ„ ط§ظ„ط¥ط±ط³ط§ظ„ ظٹط¹ظ†ظٹ ط£ظ† ط§ظ„ط¬ظ„ط³ط© ظ„ظ… طھط¹ط¯ طµط§ظ„ط­ط© ط؛ط§ظ„ط¨ظ‹ط§.
             await CloseAsync();
             throw;
         }
     }
 
     /// <summary>
-    /// يحرر موارد الاتصال عند انتهاء دورة حياة الجلسة.
+    /// ظٹط­ط±ط± ظ…ظˆط§ط±ط¯ ط§ظ„ط§طھطµط§ظ„ ط¹ظ†ط¯ ط§ظ†طھظ‡ط§ط، ط¯ظˆط±ط© ط­ظٹط§ط© ط§ظ„ط¬ظ„ط³ط©.
     /// </summary>
     public async ValueTask DisposeAsync()
     {
@@ -236,11 +236,11 @@ public sealed class ClientSession : IClientHandler, IAsyncDisposable
     }
 
     /// <summary>
-    /// يغلق الجلسة مرة واحدة، ثم يبلغ سجل الجلسات لتنفيذ التنظيف.
+    /// ظٹط؛ظ„ظ‚ ط§ظ„ط¬ظ„ط³ط© ظ…ط±ط© ظˆط§ط­ط¯ط©طŒ ط«ظ… ظٹط¨ظ„ط؛ ط³ط¬ظ„ ط§ظ„ط¬ظ„ط³ط§طھ ظ„طھظ†ظپظٹط° ط§ظ„طھظ†ط¸ظٹظپ.
     /// </summary>
     public async Task CloseAsync()
     {
-        // منع تكرار إلغاء الجلسة أو تحرير الـ socket أو تنفيذ cleanup.
+        // ظ…ظ†ط¹ طھظƒط±ط§ط± ط¥ظ„ط؛ط§ط، ط§ظ„ط¬ظ„ط³ط© ط£ظˆ طھط­ط±ظٹط± ط§ظ„ظ€ socket ط£ظˆ طھظ†ظپظٹط° cleanup.
         if (Interlocked.Exchange(ref _closed, 1) != 0)
         {
             return;
@@ -250,22 +250,22 @@ public sealed class ClientSession : IClientHandler, IAsyncDisposable
 
         try
         {
-            // إغلاق اتجاهي الاتصال لإيقاف عمليات القراءة والكتابة.
+            // ط¥ط؛ظ„ط§ظ‚ ط§طھط¬ط§ظ‡ظٹ ط§ظ„ط§طھطµط§ظ„ ظ„ط¥ظٹظ‚ط§ظپ ط¹ظ…ظ„ظٹط§طھ ط§ظ„ظ‚ط±ط§ط،ط© ظˆط§ظ„ظƒطھط§ط¨ط©.
             _client.Client.Shutdown(SocketShutdown.Both);
         }
         catch
         {
-            // الاتصال قد يكون مغلقًا مسبقًا.
+            // ط§ظ„ط§طھطµط§ظ„ ظ‚ط¯ ظٹظƒظˆظ† ظ…ط؛ظ„ظ‚ظ‹ط§ ظ…ط³ط¨ظ‚ظ‹ط§.
         }
 
         _client.Dispose();
 
-        // إشعار ServerHost حتى يزيل الجلسة وينظف حضور المستخدم.
+        // ط¥ط´ط¹ط§ط± ServerHost ط­طھظ‰ ظٹط²ظٹظ„ ط§ظ„ط¬ظ„ط³ط© ظˆظٹظ†ط¸ظپ ط­ط¶ظˆط± ط§ظ„ظ…ط³طھط®ط¯ظ….
         await _registry.OnSessionClosedAsync(this);
     }
 
     /// <summary>
-    /// يعيد وصفًا آمنًا للجلسة لاستخدامه في السجلات.
+    /// ظٹط¹ظٹط¯ ظˆطµظپظ‹ط§ ط¢ظ…ظ†ظ‹ط§ ظ„ظ„ط¬ظ„ط³ط© ظ„ط§ط³طھط®ط¯ط§ظ…ظ‡ ظپظٹ ط§ظ„ط³ط¬ظ„ط§طھ.
     /// </summary>
     private string Describe()
     {

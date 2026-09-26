@@ -5,12 +5,12 @@ using VideoCall.Server.Domain.Repositories;
 namespace VideoCall.Server.Infrastructure.Repositories;
 
 /// <summary>
-/// ãÓÊæÏÚ ÇáĞÇßÑÉ ÇáãÄŞÊÉ áÅÏÇÑÉ ÌáÓÇÊ ÇáãÓÊÎÏãíä ÇáãÊÕáíä.
-/// íÓÊÎÏã ConcurrentDictionary áÖãÇä ÃãÇä ÇáÚãáíÇÊ İí ÈíÆÉ ãÊÚÏÏÉ ÇáãÓÇÑÇÊ (Thread-Safe).
+/// Ù…Ø³ØªÙˆØ¯Ø¹ Ø§Ù„Ø°Ø§ÙƒØ±Ø© Ø§Ù„Ù…Ø¤Ù‚ØªØ© Ù„Ø¥Ø¯Ø§Ø±Ø© Ø¬Ù„Ø³Ø§Øª Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…ÙŠÙ† Ø§Ù„Ù…ØªØµÙ„ÙŠÙ†.
+/// ÙŠØ³ØªØ®Ø¯Ù… ConcurrentDictionary Ù„Ø¶Ù…Ø§Ù† Ø£Ù…Ø§Ù† Ø§Ù„Ø¹Ù…Ù„ÙŠØ§Øª ÙÙŠ Ø¨ÙŠØ¦Ø© Ù…ØªØ¹Ø¯Ø¯Ø© Ø§Ù„Ù…Ø³Ø§Ø±Ø§Øª (Thread-Safe).
 /// </summary>
 public class InMemoryUserPresenceRepository : IUserPresenceRepository
 {
-    // íÊÌÇåá ÍÇáÉ ÇáÃÍÑİ İí ÃÓãÇÁ ÇáãÓÊÎÏãíä (A = a)
+    // ÙŠØªØ¬Ø§Ù‡Ù„ Ø­Ø§Ù„Ø© Ø§Ù„Ø£Ø­Ø±Ù ÙÙŠ Ø£Ø³Ù…Ø§Ø¡ Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…ÙŠÙ† (A = a)
     private readonly ConcurrentDictionary<string, IClientHandler> _sessions = new(StringComparer.OrdinalIgnoreCase);
 
     public bool TryAdd(string username, IClientHandler session)
@@ -44,7 +44,7 @@ public class InMemoryUserPresenceRepository : IUserPresenceRepository
         if (string.IsNullOrWhiteSpace(username) || expectedSession == null)
             return false;
 
-        // ÅÒÇáÉ ÇáÌáÓÉ ÇáãÔÑæØÉ: ÊãäÚ ÍĞİ ÇáÌáÓÉ ÇáÌÏíÏÉ ÅĞÇ ŞÇã ÇáãÓÊÎÏã ÈÊÓÌíá ÇáÏÎæá ãÑÉ ÃÎÑì ŞÈá ÍĞİ ÇáÌáÓÉ ÇáŞÏíãÉ
+        // Ø¥Ø²Ø§Ù„Ø© Ø§Ù„Ø¬Ù„Ø³Ø© Ø§Ù„Ù…Ø´Ø±ÙˆØ·Ø©: ØªÙ…Ù†Ø¹ Ø­Ø°Ù Ø§Ù„Ø¬Ù„Ø³Ø© Ø§Ù„Ø¬Ø¯ÙŠØ¯Ø© Ø¥Ø°Ø§ Ù‚Ø§Ù… Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù… Ø¨ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„ Ù…Ø±Ø© Ø£Ø®Ø±Ù‰ Ù‚Ø¨Ù„ Ø­Ø°Ù Ø§Ù„Ø¬Ù„Ø³Ø© Ø§Ù„Ù‚Ø¯ÙŠÙ…Ø©
         var pair = new KeyValuePair<string, IClientHandler>(username, expectedSession);
         return ((ICollection<KeyValuePair<string, IClientHandler>>)_sessions).Remove(pair);
     }

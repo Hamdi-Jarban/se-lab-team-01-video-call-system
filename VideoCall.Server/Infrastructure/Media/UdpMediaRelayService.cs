@@ -9,62 +9,62 @@ using VideoCall.Shared.Networking;
 namespace VideoCall.Server.Infrastructure.Media;
 
 /// <summary>
-/// خدمة تمرير الوسائط عبر UDP بنمط SFU.
+/// ط®ط¯ظ…ط© طھظ…ط±ظٹط± ط§ظ„ظˆط³ط§ط¦ط· ط¹ط¨ط± UDP ط¨ظ†ظ…ط· SFU.
 ///
-/// يرسل كل عميل حزم الصوت والفيديو إلى الخادم، ثم يقوم الخادم بتمرير
-/// كل حزمة إلى بقية أعضاء المحادثة النشطة نفسها.
+/// ظٹط±ط³ظ„ ظƒظ„ ط¹ظ…ظٹظ„ ط­ط²ظ… ط§ظ„طµظˆطھ ظˆط§ظ„ظپظٹط¯ظٹظˆ ط¥ظ„ظ‰ ط§ظ„ط®ط§ط¯ظ…طŒ ط«ظ… ظٹظ‚ظˆظ… ط§ظ„ط®ط§ط¯ظ… ط¨طھظ…ط±ظٹط±
+/// ظƒظ„ ط­ط²ظ…ط© ط¥ظ„ظ‰ ط¨ظ‚ظٹط© ط£ط¹ط¶ط§ط، ط§ظ„ظ…ط­ط§ط¯ط«ط© ط§ظ„ظ†ط´ط·ط© ظ†ظپط³ظ‡ط§.
 ///
-/// تعتمد الخدمة على واجهات Domain للوصول إلى بيانات المحادثات والحضور،
-/// بدل الارتباط المباشر بالتنفيذات الفعلية. وهذا يسمح باستبدال مصادر
-/// البيانات أو اختبار الخدمة باستخدام تنفيذات بديلة.
+/// طھط¹طھظ…ط¯ ط§ظ„ط®ط¯ظ…ط© ط¹ظ„ظ‰ ظˆط§ط¬ظ‡ط§طھ Domain ظ„ظ„ظˆطµظˆظ„ ط¥ظ„ظ‰ ط¨ظٹط§ظ†ط§طھ ط§ظ„ظ…ط­ط§ط¯ط«ط§طھ ظˆط§ظ„ط­ط¶ظˆط±طŒ
+/// ط¨ط¯ظ„ ط§ظ„ط§ط±طھط¨ط§ط· ط§ظ„ظ…ط¨ط§ط´ط± ط¨ط§ظ„طھظ†ظپظٹط°ط§طھ ط§ظ„ظپط¹ظ„ظٹط©. ظˆظ‡ط°ط§ ظٹط³ظ…ط­ ط¨ط§ط³طھط¨ط¯ط§ظ„ ظ…طµط§ط¯ط±
+/// ط§ظ„ط¨ظٹط§ظ†ط§طھ ط£ظˆ ط§ط®طھط¨ط§ط± ط§ظ„ط®ط¯ظ…ط© ط¨ط§ط³طھط®ط¯ط§ظ… طھظ†ظپظٹط°ط§طھ ط¨ط¯ظٹظ„ط©.
 ///
-/// تنفذ الخدمة واجهتين منفصلتين لأسباب تصميمية:
-/// - IMediaRelayCoordinator: العمليات التي يحتاجها ProtocolRouter فقط،
-///   مثل حذف endpoint أو نسيان محادثة.
-/// - IAsyncDisposable: إدارة دورة حياة مورد UDP، وتستخدمها طبقة التشغيل.
+/// طھظ†ظپط° ط§ظ„ط®ط¯ظ…ط© ظˆط§ط¬ظ‡طھظٹظ† ظ…ظ†ظپطµظ„طھظٹظ† ظ„ط£ط³ط¨ط§ط¨ طھطµظ…ظٹظ…ظٹط©:
+/// - IMediaRelayCoordinator: ط§ظ„ط¹ظ…ظ„ظٹط§طھ ط§ظ„طھظٹ ظٹط­طھط§ط¬ظ‡ط§ ProtocolRouter ظپظ‚ط·طŒ
+///   ظ…ط«ظ„ ط­ط°ظپ endpoint ط£ظˆ ظ†ط³ظٹط§ظ† ظ…ط­ط§ط¯ط«ط©.
+/// - IAsyncDisposable: ط¥ط¯ط§ط±ط© ط¯ظˆط±ط© ط­ظٹط§ط© ظ…ظˆط±ط¯ UDPطŒ ظˆطھط³طھط®ط¯ظ…ظ‡ط§ ط·ط¨ظ‚ط© ط§ظ„طھط´ط؛ظٹظ„.
 ///
-/// هذا الفصل بين الواجهات يطبق مبدأ فصل الواجهات
-/// (Interface Segregation Principle)، بحيث لا تعتمد كل طبقة إلا على
-/// العمليات التي تحتاجها فعليًا.
+/// ظ‡ط°ط§ ط§ظ„ظپطµظ„ ط¨ظٹظ† ط§ظ„ظˆط§ط¬ظ‡ط§طھ ظٹط·ط¨ظ‚ ظ…ط¨ط¯ط£ ظپطµظ„ ط§ظ„ظˆط§ط¬ظ‡ط§طھ
+/// (Interface Segregation Principle)طŒ ط¨ط­ظٹط« ظ„ط§ طھط¹طھظ…ط¯ ظƒظ„ ط·ط¨ظ‚ط© ط¥ظ„ط§ ط¹ظ„ظ‰
+/// ط§ظ„ط¹ظ…ظ„ظٹط§طھ ط§ظ„طھظٹ طھط­طھط§ط¬ظ‡ط§ ظپط¹ظ„ظٹظ‹ط§.
 ///
-/// يتم تنفيذ الإيقاف بطريقة آمنة وقابلة للتكرار؛ إذ لا يمكن تنفيذ StopAsync
-/// أكثر من مرة، كما يتم انتظار دورة الاستقبال قبل تحرير UdpClient.
+/// ظٹطھظ… طھظ†ظپظٹط° ط§ظ„ط¥ظٹظ‚ط§ظپ ط¨ط·ط±ظٹظ‚ط© ط¢ظ…ظ†ط© ظˆظ‚ط§ط¨ظ„ط© ظ„ظ„طھظƒط±ط§ط±ط› ط¥ط° ظ„ط§ ظٹظ…ظƒظ† طھظ†ظپظٹط° StopAsync
+/// ط£ظƒط«ط± ظ…ظ† ظ…ط±ط©طŒ ظƒظ…ط§ ظٹطھظ… ط§ظ†طھط¸ط§ط± ط¯ظˆط±ط© ط§ظ„ط§ط³طھظ‚ط¨ط§ظ„ ظ‚ط¨ظ„ طھط­ط±ظٹط± UdpClient.
 /// </summary>
 public sealed class UdpMediaRelayService : IMediaRelayCoordinator,IAsyncDisposable
 {
-    // الحد الأعلى لحجم حزمة UDP المقبولة.
-    // يمنع استقبال حزم غير منطقية أو استهلاك موارد غير متوقع.
+    // ط§ظ„ط­ط¯ ط§ظ„ط£ط¹ظ„ظ‰ ظ„ط­ط¬ظ… ط­ط²ظ…ط© UDP ط§ظ„ظ…ظ‚ط¨ظˆظ„ط©.
+    // ظٹظ…ظ†ط¹ ط§ط³طھظ‚ط¨ط§ظ„ ط­ط²ظ… ط؛ظٹط± ظ…ظ†ط·ظ‚ظٹط© ط£ظˆ ط§ط³طھظ‡ظ„ط§ظƒ ظ…ظˆط§ط±ط¯ ط؛ظٹط± ظ…طھظˆظ‚ط¹.
     private const int MaxDatagramBytes = 64 * 1024;
 
-    // قناة UDP المستخدمة لاستقبال وتمرير حزم الوسائط.
+    // ظ‚ظ†ط§ط© UDP ط§ظ„ظ…ط³طھط®ط¯ظ…ط© ظ„ط§ط³طھظ‚ط¨ط§ظ„ ظˆطھظ…ط±ظٹط± ط­ط²ظ… ط§ظ„ظˆط³ط§ط¦ط·.
     private readonly UdpClient _udp;
 
-    // مستودع المحادثات للتحقق من حالة المكالمة وعضوية المرسل.
+    // ظ…ط³طھظˆط¯ط¹ ط§ظ„ظ…ط­ط§ط¯ط«ط§طھ ظ„ظ„طھط­ظ‚ظ‚ ظ…ظ† ط­ط§ظ„ط© ط§ظ„ظ…ظƒط§ظ„ظ…ط© ظˆط¹ط¶ظˆظٹط© ط§ظ„ظ…ط±ط³ظ„.
     private readonly IConversationRepository _conversations;
 
-    // مستودع الحضور للتحقق من أن المرسل مستخدم متصل فعليًا.
+    // ظ…ط³طھظˆط¯ط¹ ط§ظ„ط­ط¶ظˆط± ظ„ظ„طھط­ظ‚ظ‚ ظ…ظ† ط£ظ† ط§ظ„ظ…ط±ط³ظ„ ظ…ط³طھط®ط¯ظ… ظ…طھطµظ„ ظپط¹ظ„ظٹظ‹ط§.
     private readonly IUserPresenceRepository _presence;
 
-    // خدمة التسجيل المركزي للأخطاء والأحداث التشغيلية.
+    // ط®ط¯ظ…ط© ط§ظ„طھط³ط¬ظٹظ„ ط§ظ„ظ…ط±ظƒط²ظٹ ظ„ظ„ط£ط®ط·ط§ط، ظˆط§ظ„ط£ط­ط¯ط§ط« ط§ظ„طھط´ط؛ظٹظ„ظٹط©.
     private readonly IAppLogger _logger;
 
-    // جدول نقاط الاتصال المسجلة لكل محادثة.
-    // المفتاح الأول هو معرف المحادثة، والمفتاح الثاني اسم المستخدم.
+    // ط¬ط¯ظˆظ„ ظ†ظ‚ط§ط· ط§ظ„ط§طھطµط§ظ„ ط§ظ„ظ…ط³ط¬ظ„ط© ظ„ظƒظ„ ظ…ط­ط§ط¯ط«ط©.
+    // ط§ظ„ظ…ظپطھط§ط­ ط§ظ„ط£ظˆظ„ ظ‡ظˆ ظ…ط¹ط±ظپ ط§ظ„ظ…ط­ط§ط¯ط«ط©طŒ ظˆط§ظ„ظ…ظپطھط§ط­ ط§ظ„ط«ط§ظ†ظٹ ط§ط³ظ… ط§ظ„ظ…ط³طھط®ط¯ظ….
     private readonly ConcurrentDictionary<
         string,
         ConcurrentDictionary<string, IPEndPoint>> _endpoints =
         new(StringComparer.OrdinalIgnoreCase);
 
-    // علامة ذرية تحدد ما إذا كانت الخدمة قد دخلت مرحلة الإيقاف.
+    // ط¹ظ„ط§ظ…ط© ط°ط±ظٹط© طھط­ط¯ط¯ ظ…ط§ ط¥ط°ط§ ظƒط§ظ†طھ ط§ظ„ط®ط¯ظ…ط© ظ‚ط¯ ط¯ط®ظ„طھ ظ…ط±ط­ظ„ط© ط§ظ„ط¥ظٹظ‚ط§ظپ.
     private int _stopped;
 
     /// <summary>
-    /// ينشئ خدمة تمرير الوسائط ويربطها بالاعتماديات المطلوبة.
+    /// ظٹظ†ط´ط¦ ط®ط¯ظ…ط© طھظ…ط±ظٹط± ط§ظ„ظˆط³ط§ط¦ط· ظˆظٹط±ط¨ط·ظ‡ط§ ط¨ط§ظ„ط§ط¹طھظ…ط§ط¯ظٹط§طھ ط§ظ„ظ…ط·ظ„ظˆط¨ط©.
     /// </summary>
-    /// <param name="conversations">مستودع المحادثات.</param>
-    /// <param name="presence">مستودع المستخدمين المتصلين.</param>
-    /// <param name="logger">خدمة التسجيل.</param>
-    /// <param name="port">منفذ UDP الخاص بالوسائط.</param>
+    /// <param name="conversations">ظ…ط³طھظˆط¯ط¹ ط§ظ„ظ…ط­ط§ط¯ط«ط§طھ.</param>
+    /// <param name="presence">ظ…ط³طھظˆط¯ط¹ ط§ظ„ظ…ط³طھط®ط¯ظ…ظٹظ† ط§ظ„ظ…طھطµظ„ظٹظ†.</param>
+    /// <param name="logger">ط®ط¯ظ…ط© ط§ظ„طھط³ط¬ظٹظ„.</param>
+    /// <param name="port">ظ…ظ†ظپط° UDP ط§ظ„ط®ط§طµ ط¨ط§ظ„ظˆط³ط§ط¦ط·.</param>
     public UdpMediaRelayService(
         IConversationRepository conversations,
         IUserPresenceRepository presence,
@@ -80,14 +80,14 @@ public sealed class UdpMediaRelayService : IMediaRelayCoordinator,IAsyncDisposab
         _logger = logger
             ?? throw new ArgumentNullException(nameof(logger));
 
-        // فتح منفذ UDP عند إنشاء الخدمة.
+        // ظپطھط­ ظ…ظ†ظپط° UDP ط¹ظ†ط¯ ط¥ظ†ط´ط§ط، ط§ظ„ط®ط¯ظ…ط©.
         _udp = new UdpClient(port);
     }
 
     /// <summary>
-    /// يبدأ حلقة استقبال حزم الوسائط من العملاء.
+    /// ظٹط¨ط¯ط£ ط­ظ„ظ‚ط© ط§ط³طھظ‚ط¨ط§ظ„ ط­ط²ظ… ط§ظ„ظˆط³ط§ط¦ط· ظ…ظ† ط§ظ„ط¹ظ…ظ„ط§ط،.
     /// </summary>
-    /// <param name="ct">رمز إلغاء دورة تشغيل الخادم.</param>
+    /// <param name="ct">ط±ظ…ط² ط¥ظ„ط؛ط§ط، ط¯ظˆط±ط© طھط´ط؛ظٹظ„ ط§ظ„ط®ط§ط¯ظ….</param>
     public async Task RunAsync(CancellationToken ct)
     {
         _logger.Info("SFU media relay started.");
@@ -100,13 +100,13 @@ public sealed class UdpMediaRelayService : IMediaRelayCoordinator,IAsyncDisposab
 
                 try
                 {
-                    // انتظار حزمة UDP جديدة مع دعم الإلغاء.
+                    // ط§ظ†طھط¸ط§ط± ط­ط²ظ…ط© UDP ط¬ط¯ظٹط¯ط© ظ…ط¹ ط¯ط¹ظ… ط§ظ„ط¥ظ„ط؛ط§ط،.
                     received = await _udp.ReceiveAsync(ct);
                 }
                 catch (OperationCanceledException)
                     when (ct.IsCancellationRequested)
                 {
-                    // إيقاف طبيعي نتيجة إلغاء الخادم.
+                    // ط¥ظٹظ‚ط§ظپ ط·ط¨ظٹط¹ظٹ ظ†طھظٹط¬ط© ط¥ظ„ط؛ط§ط، ط§ظ„ط®ط§ط¯ظ….
                     break;
                 }
                 catch (SocketException ex)
@@ -116,7 +116,7 @@ public sealed class UdpMediaRelayService : IMediaRelayCoordinator,IAsyncDisposab
                     continue;
                 }
 
-                // تجاهل الحزم التي تتجاوز الحد المسموح به.
+                // طھط¬ط§ظ‡ظ„ ط§ظ„ط­ط²ظ… ط§ظ„طھظٹ طھطھط¬ط§ظˆط² ط§ظ„ط­ط¯ ط§ظ„ظ…ط³ظ…ظˆط­ ط¨ظ‡.
                 if (received.Buffer.Length > MaxDatagramBytes)
                 {
                     continue;
@@ -130,21 +130,21 @@ public sealed class UdpMediaRelayService : IMediaRelayCoordinator,IAsyncDisposab
         }
         finally
         {
-            // ضمان تحرير مورد UDP حتى عند حدوث استثناء أو إلغاء.
+            // ط¶ظ…ط§ظ† طھط­ط±ظٹط± ظ…ظˆط±ط¯ UDP ط­طھظ‰ ط¹ظ†ط¯ ط­ط¯ظˆط« ط§ط³طھط«ظ†ط§ط، ط£ظˆ ط¥ظ„ط؛ط§ط،.
             await StopAsync();
         }
     }
 
     /// <summary>
-    /// يتحقق من حزمة وسائط واحدة ثم يسجل endpoint المرسل ويمرر الحزمة
-    /// إلى بقية أعضاء المحادثة النشطة.
+    /// ظٹطھط­ظ‚ظ‚ ظ…ظ† ط­ط²ظ…ط© ظˆط³ط§ط¦ط· ظˆط§ط­ط¯ط© ط«ظ… ظٹط³ط¬ظ„ endpoint ط§ظ„ظ…ط±ط³ظ„ ظˆظٹظ…ط±ط± ط§ظ„ط­ط²ظ…ط©
+    /// ط¥ظ„ظ‰ ط¨ظ‚ظٹط© ط£ط¹ط¶ط§ط، ط§ظ„ظ…ط­ط§ط¯ط«ط© ط§ظ„ظ†ط´ط·ط©.
     /// </summary>
     private async Task HandlePacketAsync(
         byte[] bytes,
         IPEndPoint senderEndpoint,
         CancellationToken ct)
     {
-        // محاولة فك تسلسل الحزمة والتحقق من معرف المحادثة.
+        // ظ…ط­ط§ظˆظ„ط© ظپظƒ طھط³ظ„ط³ظ„ ط§ظ„ط­ط²ظ…ط© ظˆط§ظ„طھط­ظ‚ظ‚ ظ…ظ† ظ…ط¹ط±ظپ ط§ظ„ظ…ط­ط§ط¯ط«ط©.
         var packet = MediaPacket.TryDeserialize(
             bytes,
             bytes.Length);
@@ -154,20 +154,20 @@ public sealed class UdpMediaRelayService : IMediaRelayCoordinator,IAsyncDisposab
             return;
         }
 
-        // لا يمكن قبول حزمة لا تحتوي على هوية مرسل.
+        // ظ„ط§ ظٹظ…ظƒظ† ظ‚ط¨ظˆظ„ ط­ط²ظ…ط© ظ„ط§ طھط­طھظˆظٹ ط¹ظ„ظ‰ ظ‡ظˆظٹط© ظ…ط±ط³ظ„.
         if (string.IsNullOrWhiteSpace(packet.SenderUsername))
         {
             return;
         }
 
-        // قبول أنواع الوسائط المدعومة فقط.
+        // ظ‚ط¨ظˆظ„ ط£ظ†ظˆط§ط¹ ط§ظ„ظˆط³ط§ط¦ط· ط§ظ„ظ…ط¯ط¹ظˆظ…ط© ظپظ‚ط·.
         if (packet.MediaType is not
             (MediaType.Audio or MediaType.Video or MediaType.Handshake))
         {
             return;
         }
 
-        // التأكد من أن معرف الوسائط مرتبط بمحادثة نشطة.
+        // ط§ظ„طھط£ظƒط¯ ظ…ظ† ط£ظ† ظ…ط¹ط±ظپ ط§ظ„ظˆط³ط§ط¦ط· ظ…ط±طھط¨ط· ط¨ظ…ط­ط§ط¯ط«ط© ظ†ط´ط·ط©.
         if (!_conversations.TryGetActiveConversationByMediaId(
                 packet.CallId,
                 out var conversation))
@@ -177,7 +177,7 @@ public sealed class UdpMediaRelayService : IMediaRelayCoordinator,IAsyncDisposab
 
         var conversationId = conversation.Id;
 
-        // منع مستخدم غير عضو في المحادثة من إرسال الوسائط إليها.
+        // ظ…ظ†ط¹ ظ…ط³طھط®ط¯ظ… ط؛ظٹط± ط¹ط¶ظˆ ظپظٹ ط§ظ„ظ…ط­ط§ط¯ط«ط© ظ…ظ† ط¥ط±ط³ط§ظ„ ط§ظ„ظˆط³ط§ط¦ط· ط¥ظ„ظٹظ‡ط§.
         if (!_conversations.IsMember(
                 conversationId,
                 packet.SenderUsername))
@@ -185,7 +185,7 @@ public sealed class UdpMediaRelayService : IMediaRelayCoordinator,IAsyncDisposab
             return;
         }
 
-        // التأكد من أن المستخدم متصل حاليًا.
+        // ط§ظ„طھط£ظƒط¯ ظ…ظ† ط£ظ† ط§ظ„ظ…ط³طھط®ط¯ظ… ظ…طھطµظ„ ط­ط§ظ„ظٹظ‹ط§.
         if (!_presence.TryGet(
                 packet.SenderUsername,
                 out var session))
@@ -193,29 +193,29 @@ public sealed class UdpMediaRelayService : IMediaRelayCoordinator,IAsyncDisposab
             return;
         }
 
-        // مطابقة SessionToken تمنع انتحال هوية مستخدم متصل.
+        // ظ…ط·ط§ط¨ظ‚ط© SessionToken طھظ…ظ†ط¹ ط§ظ†طھط­ط§ظ„ ظ‡ظˆظٹط© ظ…ط³طھط®ط¯ظ… ظ…طھطµظ„.
         if (session.SessionToken != packet.SessionToken)
         {
             return;
         }
 
-        // إنشاء سجل endpoints للمحادثة عند الحاجة.
+        // ط¥ظ†ط´ط§ط، ط³ط¬ظ„ endpoints ظ„ظ„ظ…ط­ط§ط¯ط«ط© ط¹ظ†ط¯ ط§ظ„ط­ط§ط¬ط©.
         var roomEndpoints = _endpoints.GetOrAdd(
             conversationId,
             _ => new ConcurrentDictionary<string, IPEndPoint>(
                 StringComparer.OrdinalIgnoreCase));
 
-        // تحديث عنوان الشبكة الخاص بالمرسل.
-        // هذا يدعم تغير endpoint الناتج عن NAT أو إعادة الاتصال.
+        // طھط­ط¯ظٹط« ط¹ظ†ظˆط§ظ† ط§ظ„ط´ط¨ظƒط© ط§ظ„ط®ط§طµ ط¨ط§ظ„ظ…ط±ط³ظ„.
+        // ظ‡ط°ط§ ظٹط¯ط¹ظ… طھط؛ظٹط± endpoint ط§ظ„ظ†ط§طھط¬ ط¹ظ† NAT ط£ظˆ ط¥ط¹ط§ط¯ط© ط§ظ„ط§طھطµط§ظ„.
         roomEndpoints[packet.SenderUsername] = senderEndpoint;
 
-        // Handshake يستخدم لتسجيل endpoint فقط ولا يتم تمريره كصوت.
+        // Handshake ظٹط³طھط®ط¯ظ… ظ„طھط³ط¬ظٹظ„ endpoint ظپظ‚ط· ظˆظ„ط§ ظٹطھظ… طھظ…ط±ظٹط±ظ‡ ظƒطµظˆطھ.
         if (packet.MediaType == MediaType.Handshake)
         {
             return;
         }
 
-        // تمرير الحزمة إلى جميع أعضاء المحادثة باستثناء المرسل.
+        // طھظ…ط±ظٹط± ط§ظ„ط­ط²ظ…ط© ط¥ظ„ظ‰ ط¬ظ…ظٹط¹ ط£ط¹ط¶ط§ط، ط§ظ„ظ…ط­ط§ط¯ط«ط© ط¨ط§ط³طھط«ظ†ط§ط، ط§ظ„ظ…ط±ط³ظ„.
         foreach (var item in roomEndpoints.ToArray())
         {
             ct.ThrowIfCancellationRequested();
@@ -242,15 +242,15 @@ public sealed class UdpMediaRelayService : IMediaRelayCoordinator,IAsyncDisposab
             catch (ObjectDisposedException)
                 when (Volatile.Read(ref _stopped) != 0)
             {
-                // الإرسال أوقف لأن الخدمة دخلت مرحلة الإغلاق.
+                // ط§ظ„ط¥ط±ط³ط§ظ„ ط£ظˆظ‚ظپ ظ„ط£ظ† ط§ظ„ط®ط¯ظ…ط© ط¯ط®ظ„طھ ظ…ط±ط­ظ„ط© ط§ظ„ط¥ط؛ظ„ط§ظ‚.
                 return;
             }
         }
     }
 
     /// <summary>
-    /// يحذف endpoint الخاص بمستخدم من محادثة محددة.
-    /// يستخدم عند مغادرة المستخدم أو انقطاع جلسة الاتصال.
+    /// ظٹط­ط°ظپ endpoint ط§ظ„ط®ط§طµ ط¨ظ…ط³طھط®ط¯ظ… ظ…ظ† ظ…ط­ط§ط¯ط«ط© ظ…ط­ط¯ط¯ط©.
+    /// ظٹط³طھط®ط¯ظ… ط¹ظ†ط¯ ظ…ط؛ط§ط¯ط±ط© ط§ظ„ظ…ط³طھط®ط¯ظ… ط£ظˆ ط§ظ†ظ‚ط·ط§ط¹ ط¬ظ„ط³ط© ط§ظ„ط§طھطµط§ظ„.
     /// </summary>
     public void RemoveEndpoint(
         string conversationId,
@@ -265,7 +265,7 @@ public sealed class UdpMediaRelayService : IMediaRelayCoordinator,IAsyncDisposab
 
         members.TryRemove(username, out _);
 
-        // حذف سجل المحادثة إذا لم يتبق أي endpoint.
+        // ط­ط°ظپ ط³ط¬ظ„ ط§ظ„ظ…ط­ط§ط¯ط«ط© ط¥ط°ط§ ظ„ظ… ظٹطھط¨ظ‚ ط£ظٹ endpoint.
         if (members.IsEmpty)
         {
             _endpoints.TryRemove(
@@ -275,8 +275,8 @@ public sealed class UdpMediaRelayService : IMediaRelayCoordinator,IAsyncDisposab
     }
 
     /// <summary>
-    /// يحذف جميع endpoints المرتبطة بمحادثة كاملة.
-    /// يستخدم عند إنهاء المكالمة أو إيقاف جلسة الوسائط.
+    /// ظٹط­ط°ظپ ط¬ظ…ظٹط¹ endpoints ط§ظ„ظ…ط±طھط¨ط·ط© ط¨ظ…ط­ط§ط¯ط«ط© ظƒط§ظ…ظ„ط©.
+    /// ظٹط³طھط®ط¯ظ… ط¹ظ†ط¯ ط¥ظ†ظ‡ط§ط، ط§ظ„ظ…ظƒط§ظ„ظ…ط© ط£ظˆ ط¥ظٹظ‚ط§ظپ ط¬ظ„ط³ط© ط§ظ„ظˆط³ط§ط¦ط·.
     /// </summary>
     public void ForgetConversation(string conversationId)
     {
@@ -286,11 +286,11 @@ public sealed class UdpMediaRelayService : IMediaRelayCoordinator,IAsyncDisposab
     }
 
     /// <summary>
-    /// يوقف خدمة UDP مرة واحدة فقط ويحرر مورد الشبكة.
+    /// ظٹظˆظ‚ظپ ط®ط¯ظ…ط© UDP ظ…ط±ط© ظˆط§ط­ط¯ط© ظپظ‚ط· ظˆظٹط­ط±ط± ظ…ظˆط±ط¯ ط§ظ„ط´ط¨ظƒط©.
     /// </summary>
     public async Task StopAsync()
     {
-        // منع تنفيذ الإيقاف أكثر من مرة عند تزامن عدة مسارات.
+        // ظ…ظ†ط¹ طھظ†ظپظٹط° ط§ظ„ط¥ظٹظ‚ط§ظپ ط£ظƒط«ط± ظ…ظ† ظ…ط±ط© ط¹ظ†ط¯ طھط²ط§ظ…ظ† ط¹ط¯ط© ظ…ط³ط§ط±ط§طھ.
         if (Interlocked.Exchange(ref _stopped, 1) != 0)
         {
             return;
@@ -298,12 +298,12 @@ public sealed class UdpMediaRelayService : IMediaRelayCoordinator,IAsyncDisposab
 
         _udp.Dispose();
 
-        // الحفاظ على واجهة async لتسهيل دمج الخدمة مع دورة تشغيل الخادم.
+        // ط§ظ„ط­ظپط§ط¸ ط¹ظ„ظ‰ ظˆط§ط¬ظ‡ط© async ظ„طھط³ظ‡ظٹظ„ ط¯ظ…ط¬ ط§ظ„ط®ط¯ظ…ط© ظ…ط¹ ط¯ظˆط±ط© طھط´ط؛ظٹظ„ ط§ظ„ط®ط§ط¯ظ….
         await Task.CompletedTask;
     }
 
     /// <summary>
-    /// يحرر موارد الخدمة عند انتهاء دورة حياتها.
+    /// ظٹط­ط±ط± ظ…ظˆط§ط±ط¯ ط§ظ„ط®ط¯ظ…ط© ط¹ظ†ط¯ ط§ظ†طھظ‡ط§ط، ط¯ظˆط±ط© ط­ظٹط§طھظ‡ط§.
     /// </summary>
     public async ValueTask DisposeAsync()
     {

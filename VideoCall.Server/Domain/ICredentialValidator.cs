@@ -1,17 +1,17 @@
 namespace VideoCall.Server.Domain;
 
 /// <summary>
-/// у╙─цс ┌ф ╟с╩═▐▐ уф ╒═╔ ╟╙у ╟су╙╩╬╧у ц▀су╔ ╟су╤ц╤.
+/// ┘Е╪│╪д┘И┘Д ╪╣┘Ж ╪з┘Д╪к╪н┘В┘В ┘Е┘Ж ╪╡╪н╪й ╪з╪│┘Е ╪з┘Д┘Е╪│╪к╪о╪п┘Е ┘И┘Г┘Д┘Е╪й ╪з┘Д┘Е╪▒┘И╪▒.
 /// </summary>
 public interface ICredentialValidator
 {
     /// <summary>
-    /// э╩═▐▐ уф ╚э╟ф╟╩ ╧╬цс ╟су╙╩╬╧у.
+    /// ┘К╪к╪н┘В┘В ┘Е┘Ж ╪и┘К╪з┘Ж╪з╪к ╪п╪о┘И┘Д ╪з┘Д┘Е╪│╪к╪о╪п┘Е.
     /// </summary>
-    /// <param name="username">╟╙у ╟су╙╩╬╧у.</param>
-    /// <param name="password">▀су╔ ╟су╤ц╤.</param>
+    /// <param name="username">╪з╪│┘Е ╪з┘Д┘Е╪│╪к╪о╪п┘Е.</param>
+    /// <param name="password">┘Г┘Д┘Е╪й ╪з┘Д┘Е╪▒┘И╪▒.</param>
     /// <returns>
-    /// true ┼╨╟ ▀╟ф╩ ╟с╚э╟ф╟╩ ╒═э═╔б ц┼с╟ false.
+    /// true ╪е╪░╪з ┘Г╪з┘Ж╪к ╪з┘Д╪и┘К╪з┘Ж╪з╪к ╪╡╪н┘К╪н╪й╪М ┘И╪е┘Д╪з false.
     /// </returns>
     bool Validate(string username, string password);
 }

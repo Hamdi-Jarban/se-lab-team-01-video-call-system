@@ -3,55 +3,55 @@ using VideoCall.Server.Domain;
 namespace VideoCall.Server.Domain.Repositories;
 
 /// <summary>
-/// ํฯํั วแใำสฮฯใํไ วแใสีแํไ ๆวแฬแำวส วแใัสศุษ ศๅใ.
+/// ูุฏูุฑ ุงูู…ุณุชุฎุฏู…ูู ุงูู…ุชุตููู ูุงูุฌูุณุงุช ุงูู…ุฑุชุจุทุฉ ุจูู….
 /// </summary>
 public interface IUserPresenceRepository
 {
     /// <summary>
-    /// ํึํÝ ใำสฮฯใ๐ว ลแ์ Þวฦใษ วแใสีแํไ.
+    /// ูุถูู ู…ุณุชุฎุฏู…ูุง ุฅูู ูุงุฆู…ุฉ ุงูู…ุชุตููู.
     /// </summary>
-    /// <param name="username">วำใ วแใำสฮฯใ.</param>
-    /// <param name="session">ฬแำษ วแใำสฮฯใ.</param>
+    /// <param name="username">ุงุณู… ุงูู…ุณุชุฎุฏู….</param>
+    /// <param name="session">ุฌูุณุฉ ุงูู…ุณุชุฎุฏู….</param>
     /// <returns>
-    /// true ฺไฯ ไฬวอ วแลึวÝษก ๆfalse ละว ฿วไ วแใำสฮฯใ ใๆฬๆฯ๐ว ใำศÞ๐ว.
+    /// true ุนูุฏ ูุฌุงุญ ุงูุฅุถุงูุฉุ ูfalse ุฅุฐุง ูุงู ุงูู…ุณุชุฎุฏู… ู…ูุฌูุฏูุง ู…ุณุจููุง.
     /// </returns>
     bool TryAdd(string username, IClientHandler session);
 
     /// <summary>
-    /// ํศอห ฺไ ฬแำษ ใำสฮฯใ ใสีแ.
+    /// ูุจุญุซ ุนู ุฌูุณุฉ ู…ุณุชุฎุฏู… ู…ุชุตู.
     /// </summary>
-    /// <param name="username">วำใ วแใำสฮฯใ.</param>
-    /// <param name="session">วแฬแำษ วแใัสศุษ ศวแใำสฮฯใ.</param>
-    /// <returns>true ละว สใ วแฺหๆั ฺแ์ วแใำสฮฯใ.</returns>
+    /// <param name="username">ุงุณู… ุงูู…ุณุชุฎุฏู….</param>
+    /// <param name="session">ุงูุฌูุณุฉ ุงูู…ุฑุชุจุทุฉ ุจุงูู…ุณุชุฎุฏู….</param>
+    /// <returns>true ุฅุฐุง ุชู… ุงูุนุซูุฑ ุนูู ุงูู…ุณุชุฎุฏู….</returns>
     bool TryGet(
         string username,
         out IClientHandler session);
 
     /// <summary>
-    /// ํสอÞÞ ใไ วสีวแ วแใำสฮฯใ อวแํ๐ว.
+    /// ูุชุญูู ู…ู ุงุชุตุงู ุงูู…ุณุชุฎุฏู… ุญุงูููุง.
     /// </summary>
-    /// <param name="username">วำใ วแใำสฮฯใ.</param>
-    /// <returns>true ละว ฿วไ วแใำสฮฯใ ใสีแ๐ว.</returns>
+    /// <param name="username">ุงุณู… ุงูู…ุณุชุฎุฏู….</param>
+    /// <returns>true ุฅุฐุง ูุงู ุงูู…ุณุชุฎุฏู… ู…ุชุตููุง.</returns>
     bool IsOnline(string username);
 
     /// <summary>
-    /// ําํแ วแใำสฮฯใ ใไ Þวฦใษ วแใสีแํไ ละว ฿วไส วแฬแำษ วแอวแํษ
-    /// ๅํ ไÝำๅว วแฬแำษ วแใสๆÞฺษ.
+    /// ูุฒูู ุงูู…ุณุชุฎุฏู… ู…ู ูุงุฆู…ุฉ ุงูู…ุชุตููู ุฅุฐุง ูุงูุช ุงูุฌูุณุฉ ุงูุญุงููุฉ
+    /// ูู ููุณูุง ุงูุฌูุณุฉ ุงูู…ุชููุนุฉ.
     /// </summary>
-    /// <param name="username">วำใ วแใำสฮฯใ.</param>
-    /// <param name="expectedSession">วแฬแำษ วแใัวฯ วแสอÞÞ ใไๅว.</param>
-    /// <returns>true ละว สใส วแลาวแษ ศไฬวอ.</returns>
+    /// <param name="username">ุงุณู… ุงูู…ุณุชุฎุฏู….</param>
+    /// <param name="expectedSession">ุงูุฌูุณุฉ ุงูู…ุฑุงุฏ ุงูุชุญูู ู…ููุง.</param>
+    /// <returns>true ุฅุฐุง ุชู…ุช ุงูุฅุฒุงูุฉ ุจูุฌุงุญ.</returns>
     bool Remove(
         string username,
         IClientHandler expectedSession);
 
     /// <summary>
-    /// ํฺํฯ รำใวม วแใำสฮฯใํไ วแใสีแํไ อวแํ๐ว.
+    /// ูุนูุฏ ุฃุณู…ุงุก ุงูู…ุณุชุฎุฏู…ูู ุงูู…ุชุตููู ุญุงูููุง.
     /// </summary>
     IReadOnlyList<string> GetUsernames();
 
     /// <summary>
-    /// ํฺํฯ ฬแำวส วแใำสฮฯใํไ วแใสีแํไ อวแํ๐ว.
+    /// ูุนูุฏ ุฌูุณุงุช ุงูู…ุณุชุฎุฏู…ูู ุงูู…ุชุตููู ุญุงูููุง.
     /// </summary>
     IReadOnlyList<IClientHandler> GetSessions();
 }
