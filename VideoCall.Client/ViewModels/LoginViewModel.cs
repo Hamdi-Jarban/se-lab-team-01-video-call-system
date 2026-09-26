@@ -1,109 +1,101 @@
+using System.Collections.ObjectModel;
 using System.Windows;
+using System.Windows.Input;
 using VideoCall.Client.Services;
 using VideoCall.Shared.Messages;
 using VideoCall.Client.Contracts;
 
 namespace VideoCall.Client.ViewModels;
 
-/// <summary>
-/// ÅÏÇÑÉ ÍÇáÉ æÇÌåÉ ÊÓÌíá ÇáÏÎæá æÇáÇÊÕÇá ÈÎÏãÇÊ ÇáÔÈßÉ.
-/// </summary>
-public sealed class LoginViewModel : ViewModelBase, IDisposable
+// ÇáäãæĞÌ ÇáãÓÄæá Úä æÇÌåÉ áæÍÉ ÇáÊÍßã ÇáÑÆíÓíÉ æÅÏÇÑÉ ÍÇáÉ ÇáÇÊÕÇá æŞÇÆãÉ ÇáãÓÊÎÏãíä
+public sealed class MainViewModel : ViewModelBase, IDisposable
 {
     private readonly INetworkClient _network;
-    private string _serverAddress = "127.0.0.1";
-    private string _username = string.Empty;
     private string _status = string.Empty;
-    private bool _busy;
+    private bool _connected;
 
-    public string ServerAddress
-    {
-        get => _serverAddress;
-        set => SetField(ref _serverAddress, value);
-    }
-    public string Username
-    {
-        get => _username;
-        set => SetField(ref _username, value);
-    }
-    public string Status
-    {
-        get => _status;
-        private set => SetField(ref _status, value);
-    }
-    public bool IsBusy
-    {
-        get => _busy;
-        private set => SetField(ref _busy, value);
-    }
+    // ŞÇÆãÉ ÇáãÓÊÎÏãíä ÇáãÊÕáíä áÚÑÖåÇ ãÈÇÔÑÉ İí æÇÌåÉ ÇáãÓÊÎÏã (UI)
+    public ObservableCollection<string> OnlineUsers { get; } = new();
+    public string CurrentUsername => _network.Username ?? string.Empty;
+    public bool IsConnected { get => _connected; private set => SetField(ref _connected, value); }
+    public string Status { get => _status; set => SetField(ref _status, value); }
+    public string ConnectionStatus => IsConnected ? "ãÊÕá ÈÇáÎÇÏã" : "ÛíÑ ãÊÕá ÈÇáÎÇÏã";
 
-    public event Action? LoginSucceeded;
+    public ICommand CallUserCommand { get; }
+    public ICommand OpenRoomsCommand { get; }
+    
+    // ÃÍÏÇË (Events) áÊäÈíå æÇÌåÉ ÇáãÓÊÎÏã ÚäÏ ÊáŞí Ãæ ÈÏÁ ãßÇáãÇÊ
+    public event Action<string>? PrivateCallRequested;
+    public event Action<CallRequestPayload>? IncomingCall;
+    public event Action<CallAcceptedPayload>? PrivateCallAccepted;
+    public event Action<CallRejectedPayload>? PrivateCallRejected;
+    public event Action<CallEndedPayload>? PrivateCallEnded;
+    public event Action? OpenRoomsRequested;
 
-    public LoginViewModel(INetworkClient network)
+    public MainViewModel(INetworkClient network)
     {
         _network = network;
-        _network.LoginResponseReceived += OnLoginResponse;
+        IsConnected = network.IsConnected;
+        
+        // ÇáÇÔÊÑÇß İí ÃÍÏÇË ÇáÔÈßÉ ÇáŞÇÏãÉ ãä ÇáÎÇÏã æÊæÌíååÇ ááæÇÌåÉ
+        _network.OnlineUsersUpdated += OnUsersUpdated;
+        _network.Disconnected += OnDisconnected;
+        _network.IncomingCall += payload => OnUi(() => IncomingCall?.Invoke(payload));
+        _network.CallAccepted += payload => OnUi(() => PrivateCallAccepted?.Invoke(payload));
+        _network.CallRejected += payload => OnUi(() => PrivateCallRejected?.Invoke(payload));
+        _network.CallEnded += payload => OnUi(() => PrivateCallEnded?.Invoke(payload));
+        _network.ErrorReceived += OnError;
+
+        CallUserCommand = new RelayCommand(() => { });
+        OpenRoomsCommand = new RelayCommand(() => OpenRoomsRequested?.Invoke());
     }
 
-    /// <summary>
-    /// ÇáÊÍŞŞ ãä ÇáÍŞæá¡ ÅäÔÇÁ ÇáÇÊÕÇá ÈÇáÎÇÏã Åä áÒã ÇáÃãÑ¡ æÅÑÓÇá ÈíÇäÇÊ ÇáÇÚÊãÇÏ.
-    /// </summary>
-    public async Task LoginAsync(string password)
+    // ÈÏÁ ØáÈ ãßÇáãÉ ÎÇÕÉ ãÚ ãÓÊÎÏã ãÍÏÏ
+    public void RequestPrivateCall(string username)
     {
-        if (IsBusy) return;
-        if (string.IsNullOrWhiteSpace(ServerAddress) ||
-            string.IsNullOrWhiteSpace(Username) ||
-            string.IsNullOrWhiteSpace(password))
-        {
-            Status = "ÃÏÎá ÚäæÇä ÇáÎÇÏã æÇÓã ÇáãÓÊÎÏã æßáãÉ ÇáãÑæÑ.";
-            return;
-        }
-
-        IsBusy = true;
-        Status = "ÌÇÑí ÇáÇÊÕÇá ÈÇáÎÇÏã...";
-        if (!_network.IsConnected)
-        {
-            var connected = await _network.ConnectAsync(ServerAddress.Trim());
-            if (!connected)
-            {
-                IsBusy = false;
-                Status = "ÊÚĞÑ ÇáÇÊÕÇá ÈÇáÎÇÏã.";
-                return;
-            }
-        }
-
-        await _network.LoginAsync(Username.Trim(), password);
+        if (!IsConnected || string.IsNullOrWhiteSpace(username)) return;
+        PrivateCallRequested?.Invoke(username);
     }
 
-    /// <summary>
-    /// ãÚÇáÌÉ ÑÏ ÇáÎÇÏã æÊÍÏíË ÍÇáÉ æÇÌåÉ ÇáãÓÊÎÏã ÈäÇÁğ Úáì ÇáäÊíÌÉ.
-    /// </summary>
-    private void OnLoginResponse(LoginResponsePayload response)
+    // ÇáÇÓÊÌÇÈÉ áØáÈÇÊ ÇáÇÊÕÇá ÇáæÇÑÏÉ
+    public async Task RejectIncomingCallAsync(CallRequestPayload request) =>
+        await _network.RejectCallAsync(request.CallId, request.Caller);
+
+    public async Task AcceptIncomingCallAsync(CallRequestPayload request) =>
+        await _network.AcceptCallAsync(request.CallId, request.Caller);
+
+    // ÊÍÏíË ŞÇÆãÉ ÇáãÓÊÎÏãíä ÇáäÔØíä İæÑ æÕæá ÊÍÏíË ãä ÇáÎÇÏã æÇÓÊËäÇÁ ÇáãÓÊÎÏã ÇáÍÇáí
+    private void OnUsersUpdated(OnlineUsersUpdatePayload payload)
     {
         OnUi(() =>
         {
-            IsBusy = false;
-            if (response.Success)
-            {
-                Status = string.Empty;
-                LoginSucceeded?.Invoke();
-                return;
-            }
-
-            Status = response.ErrorCode switch
-            {
-                ErrorCodes.InvalidCredentials => "ÈíÇäÇÊ ÇáÏÎæá ÛíÑ ÕÍíÍÉ.",
-                ErrorCodes.AlreadyLoggedIn => "ÇáãÓÊÎÏã ãÓÌá ÇáÏÎæá ãÓÈŞğÇ.",
-                _ => "İÔá ÊÓÌíá ÇáÏÎæá."
-            };
+            OnlineUsers.Clear();
+            foreach (var user in payload.Usernames.Where(x => !x.Equals(CurrentUsername, StringComparison.OrdinalIgnoreCase)))
+                OnlineUsers.Add(user);
+            IsConnected = true;
+            Raise(nameof(CurrentUsername));
+            Raise(nameof(ConnectionStatus));
         });
     }
 
-    public void Dispose() => _network.LoginResponseReceived -= OnLoginResponse;
+    private void OnDisconnected() => OnUi(() =>
+    {
+        IsConnected = false;
+        Raise(nameof(ConnectionStatus));
+        Status = "ÇäŞØÚ ÇáÇÊÕÇá ÈÇáÎÇÏã.";
+    });
 
-    /// <summary>
-    /// ÖãÇä ÊäİíĞ ÇáÚãáíÇÊ Úáì ÎíØ æÇÌåÉ ÇáãÓÊÎÏã (UI Dispatcher).
-    /// </summary>
+    private void OnError(ErrorPayload error) => OnUi(() => Status = error.Message);
+
+    // ÊÍÑíÑ ÇáãæÇÑÏ æÅáÛÇÁ ÇáÇÔÊÑÇß ãä ÇáÃÍÏÇË áãäÚ ÊÓÑÈ ÇáĞÇßÑÉ (Memory Leaks)
+    public void Dispose()
+    {
+        _network.OnlineUsersUpdated -= OnUsersUpdated;
+        _network.Disconnected -= OnDisconnected;
+        _network.ErrorReceived -= OnError;
+    }
+
+    // ÏÇáÉ ãÓÇÚÏÉ áÖãÇä ÊäİíĞ ÇáÊÍÏíËÇÊ Úáì ãÓáß æÇÌåÉ ÇáãÓÊÎÏã (UI Thread) áÊÌäÈ ÃÎØÇÁ Cross-thread
     private static void OnUi(Action action)
     {
         var dispatcher = Application.Current?.Dispatcher;
