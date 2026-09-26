@@ -3,103 +3,44 @@ using VideoCall.Shared.Models;
 
 namespace VideoCall.Server.Application;
 
-// Issue #3:
-// يعتمد هذا الكلاس على Conversation وConversationState
-// من المشروع المشترك لإدارة طلبات المكالمات الخاصة.
+/// <summary>
+/// ���� ��������� ������ ������ �������� ���� ������ɡ
+/// ��� �� ��� ������� ����� ������� ��������� �������� ���.
+/// </summary>
 public sealed class ConversationService : IConversationRepository
 {
-    // Issue #3:
-    // يستخدم القفل لمنع إنشاء طلبين متزامنين في نفس الوقت.
     private readonly object _gate = new();
+    private readonly Dictionary<string, Conversation> _conversations =
+        new(StringComparer.OrdinalIgnoreCase);
 
-    // Issue #3:
-    // تخزين المحادثات الخاصة النشطة وطلبات المكالمات قيد الانتظار.
-    private readonly Dictionary<string, Conversation> _conversations =new(StringComparer.OrdinalIgnoreCase);
-    /// <summary>
-    /// Issue #3:
-    /// التحقق مما إذا كان المستخدم لديه طلب مكالمة
-    /// أو محادثة خاصة نشطة.
-    /// </summary>
-    /// <param name="username">اسم المستخدم المطلوب التحقق منه.</param>
-    /// <returns>
-    /// true إذا كان المستخدم مشغولاً،
-    /// وfalse إذا كان يستطيع استقبال طلب جديد.
-    /// </returns>
-    public bool IsUserBusy(string username)
+    private readonly int _maxGroupMembers;
+
+    public ConversationService(int maxGroupMembers = 8)
     {
-        // Issue #3:
-        // الاسم الفارغ لا يمثل مستخدماً صالحاً، لذلك لا يعتبر مشغولاً.
-        if (string.IsNullOrWhiteSpace(username))
-        {
-            return false;
-        }
-
-        // Issue #3:
-        // حماية قراءة قائمة المحادثات أثناء وصول طلبات متزامنة.
-        lock (_gate)
-        {
-            return _conversations.Values.Any(conversation =>
-                // Created تعني أن الطلب ما زال ينتظر رد المستخدم.
-                // Active تعني أن المكالمة بدأت بالفعل.
-                (conversation.State is
-                    ConversationState.Created or
-                    ConversationState.Active) &&
-
-                // التحقق من وجود المستخدم ضمن أعضاء المحادثة.
-                conversation.Members.Contains(username));
-        }
+        if (maxGroupMembers < 2) throw new ArgumentOutOfRangeException(nameof(maxGroupMembers));
+        _maxGroupMembers = maxGroupMembers;
     }
 
-    /// <summary>
-    /// Issue #3:
-    /// إنشاء محادثة خاصة جديدة عند إرسال طلب مكالمة.
-    /// تبدأ المحادثة بالحالة Created حتى يرد المستخدم المستهدف.
-    /// </summary>
-    /// <param name="conversationId">المعرّف الفريد للمكالمة.</param>
-    /// <param name="caller">اسم المستخدم الذي أرسل الطلب.</param>
-    /// <param name="callee">اسم المستخدم المستهدف.</param>
-    /// <param name="conversation">المحادثة التي تم إنشاؤها.</param>
-    /// <returns>نتيجة عملية إنشاء المحادثة.</returns>
-    public ConversationOperation CreatePrivate(string conversationId,string caller,string callee,out Conversation? conversation)
+    public ConversationOperation CreatePrivate(
+        string conversationId,
+        string caller,
+        string callee,
+        out Conversation? conversation)
     {
         conversation = null;
-        // Issue #3:
-        // التحقق من البيانات الأساسية قبل إنشاء المحادثة.
         if (string.IsNullOrWhiteSpace(conversationId) ||
             string.IsNullOrWhiteSpace(caller) ||
             string.IsNullOrWhiteSpace(callee) ||
-            caller.Equals(
-                callee,
-                StringComparison.OrdinalIgnoreCase))
+            caller.Equals(callee, StringComparison.OrdinalIgnoreCase))
         {
-            // منع الاتصال بالنفس أو إنشاء محادثة ببيانات ناقصة.
             return ConversationOperation.InvalidType;
         }
 
-        // Issue #3:
-        // تنفيذ الفحص والإنشاء داخل قفل واحد لمنع
-        // تجاوز فحص الانشغال عند وصول طلبين في الوقت نفسه.
         lock (_gate)
         {
-            // Issue #3:
-            // منع إرسال طلب جديد إذا كان المرسل أو المستهدف
-            // لديه طلب مكالمة أو محادثة نشطة.
-            if (IsUserBusyUnsafe(caller) ||
-                IsUserBusyUnsafe(callee))
-            {
-                return ConversationOperation.Busy;
-            }
-
-            // Issue #3:
-            // التأكد من عدم استخدام نفس معرّف المحادثة مسبقاً.
             if (_conversations.ContainsKey(conversationId))
-            {
                 return ConversationOperation.AlreadyExists;
-            }
 
-            // Issue #3:
-            // إنشاء محادثة خاصة بحالة Created.
-            // هذه الحالة تعني أن الطلب أُرسل ولم تتم الموافقة عليه بعد.
             var item = new Conversation
             {
                 Id = conversationId,
@@ -107,39 +48,345 @@ public sealed class ConversationService : IConversationRepository
                 Host = caller,
                 State = ConversationState.Created
             };
-
-            // Issue #3:
-            // إضافة المرسل والمستخدم المستهدف إلى المحادثة.
             item.Members.Add(caller);
             item.Members.Add(callee);
-
-            // Issue #3:
-            // حفظ المحادثة حتى يتم اعتبار الطرفين مشغولين
-            // ومنع إرسال طلب آخر قبل انتهاء الطلب الحالي.
             _conversations.Add(item.Id, item);
-
-            // إعادة المحادثة التي تم إنشاؤها إلى المستدعي.
-            conversation = item;
-
+            conversation = SnapshotUnsafe(item);
             return ConversationOperation.Success;
         }
     }
 
-    /// <summary>
-    /// Issue #3:
-    /// فحص داخلي لانشغال المستخدم أثناء وجود القفل.
-    /// لا يستخدم lock داخلياً لأنه يُستدعى من داخل lock آخر.
-    /// </summary>
-    private bool IsUserBusyUnsafe(string username)
+    public ConversationOperation CreateGroup(
+        string conversationId,
+        string host,
+        out Conversation? conversation)
     {
-        return _conversations.Values.Any(conversation =>
-            // Created: طلب مكالمة ينتظر الرد.
-            // Active: مكالمة جارية.
-            (conversation.State is
-                ConversationState.Created or
-                ConversationState.Active) &&
+        conversation = null;
+        if (!IsValidId(conversationId) || string.IsNullOrWhiteSpace(host))
+            return ConversationOperation.InvalidType;
 
-            // التحقق من أن المستخدم مشارك في المحادثة.
-            conversation.Members.Contains(username));
+        lock (_gate)
+        {
+            if (_conversations.ContainsKey(conversationId))
+                return ConversationOperation.AlreadyExists;
+
+            var item = new Conversation
+            {
+                Id = conversationId.Trim(),
+                Type = ConversationType.Group,
+                Host = host.Trim(),
+                State = ConversationState.Created
+            };
+            item.Members.Add(host.Trim());
+            _conversations.Add(item.Id, item);
+            conversation = SnapshotUnsafe(item);
+            return ConversationOperation.Success;
+        }
+    }
+
+    public ConversationOperation AddMember(
+        string conversationId,
+        string requestingUser,
+        string memberUsername,
+        out Conversation? conversation)
+    {
+        conversation = null;
+        if (string.IsNullOrWhiteSpace(memberUsername)) return ConversationOperation.InvalidType;
+        lock (_gate)
+        {
+            if (!_conversations.TryGetValue(conversationId, out var item)) return ConversationOperation.NotFound;
+            if (!item.Members.Contains(requestingUser)) return ConversationOperation.NotMember;
+            if (!item.Host.Equals(requestingUser, StringComparison.OrdinalIgnoreCase)) return ConversationOperation.NotHost;
+            if (item.State == ConversationState.Active) return ConversationOperation.InvalidState;
+            if (item.Members.Contains(memberUsername.Trim()))
+            {
+                conversation = SnapshotUnsafe(item);
+                return ConversationOperation.AlreadyMember;
+            }
+            if (item.Members.Count >= _maxGroupMembers) return ConversationOperation.Full;
+            item.Members.Add(memberUsername.Trim());
+            conversation = SnapshotUnsafe(item);
+            return ConversationOperation.Success;
+        }
+    }
+
+    public ConversationOperation Join(
+        string conversationId,
+        string username,
+        out Conversation? conversation)
+    {
+        conversation = null;
+        lock (_gate)
+        {
+            if (!_conversations.TryGetValue(conversationId, out var item))
+                return ConversationOperation.NotFound;
+
+            if (item.Type == ConversationType.Private)
+                return ConversationOperation.InvalidType;
+
+            if (item.Members.Contains(username))
+            {
+                conversation = SnapshotUnsafe(item);
+                return ConversationOperation.AlreadyMember;
+            }
+
+            if (item.Members.Count >= _maxGroupMembers)
+                return ConversationOperation.Full;
+
+            item.Members.Add(username);
+            conversation = SnapshotUnsafe(item);
+            return ConversationOperation.Success;
+        }
+    }
+
+    public ConversationOperation Leave(
+        string conversationId,
+        string username,
+        out Conversation? conversation,
+        out bool removed)
+    {
+        conversation = null;
+        removed = false;
+
+        lock (_gate)
+        {
+            if (!_conversations.TryGetValue(conversationId, out var item))
+                return ConversationOperation.NotFound;
+
+            if (!item.Members.Remove(username))
+                return ConversationOperation.NotMember;
+
+            if (item.Members.Count == 0)
+            {
+                _conversations.Remove(conversationId);
+                removed = true;
+                return ConversationOperation.Success;
+            }
+
+            if (item.Host.Equals(username, StringComparison.OrdinalIgnoreCase))
+            {
+                item.Host = item.Members.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).First();
+            }
+
+            conversation = SnapshotUnsafe(item);
+            return ConversationOperation.Success;
+        }
+    }
+
+    public ConversationOperation StartMedia(
+        string conversationId,
+        string username,
+        out Conversation? conversation)
+    {
+        conversation = null;
+        lock (_gate)
+        {
+            if (!_conversations.TryGetValue(conversationId, out var item))
+                return ConversationOperation.NotFound;
+            if (!item.Members.Contains(username))
+                return ConversationOperation.NotMember;
+            if (!item.Host.Equals(username, StringComparison.OrdinalIgnoreCase))
+                return ConversationOperation.NotHost;
+            if (item.Type == ConversationType.Private && item.Members.Count != 2)
+                return ConversationOperation.PrivateConversationMustHaveTwoMembers;
+
+            item.State = ConversationState.Active;
+            item.MediaId ??= Guid.NewGuid();
+            conversation = SnapshotUnsafe(item);
+            return ConversationOperation.Success;
+        }
+    }
+
+    public ConversationOperation EndPrivate(
+        string conversationId,
+        string username,
+        out IReadOnlyList<string> members)
+    {
+        members = Array.Empty<string>();
+        lock (_gate)
+        {
+            if (!_conversations.TryGetValue(conversationId, out var item))
+                return ConversationOperation.NotFound;
+            if (item.Type != ConversationType.Private || !item.Members.Contains(username))
+                return ConversationOperation.NotMember;
+
+            members = item.Members.ToArray();
+            item.State = ConversationState.Ended;
+            _conversations.Remove(conversationId);
+            return ConversationOperation.Success;
+        }
+    }
+
+    public ConversationOperation End(
+        string conversationId,
+        string username,
+        out IReadOnlyList<string> members)
+    {
+        members = Array.Empty<string>();
+        lock (_gate)
+        {
+            if (!_conversations.TryGetValue(conversationId, out var item))
+                return ConversationOperation.NotFound;
+            if (!item.Members.Contains(username))
+                return ConversationOperation.NotMember;
+            if (!item.Host.Equals(username, StringComparison.OrdinalIgnoreCase))
+                return ConversationOperation.NotHost;
+
+            members = item.Members.ToArray();
+            item.State = ConversationState.Ended;
+            _conversations.Remove(conversationId);
+            return ConversationOperation.Success;
+        }
+    }
+
+    public ConversationOperation ActivateMedia(
+        string conversationId,
+        string username,
+        out Conversation? conversation)
+    {
+        conversation = null;
+        lock (_gate)
+        {
+            if (!_conversations.TryGetValue(conversationId, out var item))
+                return ConversationOperation.NotFound;
+            if (!item.Members.Contains(username))
+                return ConversationOperation.NotMember;
+
+            item.State = ConversationState.Active;
+            item.MediaId ??= Guid.NewGuid();
+            conversation = SnapshotUnsafe(item);
+            return ConversationOperation.Success;
+        }
+    }
+
+    public ConversationOperation StopMedia(
+        string conversationId,
+        string username,
+        out Conversation? conversation)
+    {
+        conversation = null;
+        lock (_gate)
+        {
+            if (!_conversations.TryGetValue(conversationId, out var item))
+                return ConversationOperation.NotFound;
+            if (!item.Members.Contains(username))
+                return ConversationOperation.NotMember;
+            if (!item.Host.Equals(username, StringComparison.OrdinalIgnoreCase))
+                return ConversationOperation.NotHost;
+
+            item.State = ConversationState.Created;
+            item.MediaId = null;
+            conversation = SnapshotUnsafe(item);
+            return ConversationOperation.Success;
+        }
+    }
+
+    public bool TryGet(string conversationId, out Conversation conversation)
+    {
+        lock (_gate)
+        {
+            if (_conversations.TryGetValue(conversationId, out var item))
+            {
+                conversation = SnapshotUnsafe(item);
+                return true;
+            }
+        }
+
+        conversation = null!;
+        return false;
+    }
+
+    public bool IsMember(string conversationId, string username)
+    {
+        lock (_gate)
+        {
+            return _conversations.TryGetValue(conversationId, out var item) &&
+                   item.Members.Contains(username);
+        }
+    }
+
+    public bool TryGetActiveConversationByMediaId(Guid mediaId, out Conversation conversation)
+    {
+        lock (_gate)
+        {
+            var item = _conversations.Values.FirstOrDefault(x => x.State == ConversationState.Active && x.MediaId == mediaId);
+            if (item is not null)
+            {
+                conversation = SnapshotUnsafe(item);
+                return true;
+            }
+        }
+
+        conversation = null!;
+        return false;
+    }
+
+    public bool IsMediaActive(string conversationId)
+    {
+        lock (_gate)
+        {
+            return _conversations.TryGetValue(conversationId, out var item) &&
+                   item.State == ConversationState.Active;
+        }
+    }
+
+    public IReadOnlyList<string> GetMembersSnapshot(string conversationId)
+    {
+        lock (_gate)
+        {
+            return _conversations.TryGetValue(conversationId, out var item)
+                ? item.Members.ToArray()
+                : Array.Empty<string>();
+        }
+    }
+
+    public IReadOnlyList<Conversation> RemoveUserFromAll(string username)
+    {
+        var changed = new List<Conversation>();
+        lock (_gate)
+        {
+            foreach (var item in _conversations.Values.ToArray())
+            {
+                if (!item.Members.Remove(username)) continue;
+
+                if (item.Members.Count == 0)
+                {
+                    _conversations.Remove(item.Id);
+                    continue;
+                }
+
+                if (item.Host.Equals(username, StringComparison.OrdinalIgnoreCase))
+                    item.Host = item.Members.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).First();
+
+                changed.Add(SnapshotUnsafe(item));
+            }
+        }
+
+        return changed;
+    }
+
+    public IReadOnlyList<Conversation> GetAllSnapshot()
+    {
+        lock (_gate)
+        {
+            return _conversations.Values.Select(SnapshotUnsafe).ToArray();
+        }
+    }
+
+    private static bool IsValidId(string value) =>
+        !string.IsNullOrWhiteSpace(value) && value.Trim().Length <= 64;
+
+    private static Conversation SnapshotUnsafe(Conversation source)
+    {
+        var snapshot = new Conversation
+        {
+            Id = source.Id,
+            Type = source.Type,
+            Host = source.Host,
+            State = source.State,
+            MediaId = source.MediaId
+        };
+        foreach (var member in source.Members) snapshot.Members.Add(member);
+        return snapshot;
     }
 }
