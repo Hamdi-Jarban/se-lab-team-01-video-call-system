@@ -3,11 +3,21 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="مكالمة واردة" Width="340" Height="210"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
+    
+    <!-- الحاوية الرئيسية لعناصر نافذة المكالمة الواردة -->
     <StackPanel Margin="24">
+        
+        <!-- نص عرض اسم أو معرف المتصل -->
         <TextBlock x:Name="CallerText" Style="{StaticResource TitleText}" TextAlignment="Center" />
+        
+        <!-- أزرار التفاعل مع المكالمة الواردة (قبول / رفض) -->
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,28,0,0">
+            <!-- زر قبول المكالمة -->
             <Button Content="قبول" Style="{StaticResource PrimaryButton}" Click="Accept_Click" />
+            
+            <!-- زر رفض المكالمة -->
             <Button Content="رفض" Style="{StaticResource DangerButton}" Click="Reject_Click" />
         </StackPanel>
+        
     </StackPanel>
 </Window>
