@@ -3,33 +3,55 @@ using VideoCall.Server.Domain;
 namespace VideoCall.Server.Domain.Repositories;
 
 /// <summary>
-/// Owns "who is currently online and which session belongs to them".
-/// <para>
-/// Software-engineering concepts:
-/// <list type="bullet">
-/// <item><b>Repository Pattern</b>: gives Application- and Api-layer code a
-/// collection-like view ("add", "get", "remove", "list") over online users,
-/// hiding the fact that today it is a <see cref="System.Collections.Concurrent.ConcurrentDictionary{TKey,TValue}"/>
-/// in memory. Swapping to a distributed cache (e.g. Redis) later only means
-/// writing a new class that implements this interface.</item>
-/// <item><b>Dependency Inversion Principle</b>: <c>ProtocolRouter</c> and
-/// <c>Api.ApiServer</c> depend on this abstraction, never on the concrete
-/// <c>Application.UserPresenceService</c>.</item>
-/// </list>
-/// </para>
+/// íÏíÑ ÇáãÓÊÎÏãíä ÇáãÊÕáíä æÇáÌáÓÇÊ ÇáãÑÊÈØÉ Èåã.
 /// </summary>
 public interface IUserPresenceRepository
 {
+    /// <summary>
+    /// íÖíİ ãÓÊÎÏãğÇ Åáì ŞÇÆãÉ ÇáãÊÕáíä.
+    /// </summary>
+    /// <param name="username">ÇÓã ÇáãÓÊÎÏã.</param>
+    /// <param name="session">ÌáÓÉ ÇáãÓÊÎÏã.</param>
+    /// <returns>
+    /// true ÚäÏ äÌÇÍ ÇáÅÖÇİÉ¡ æfalse ÅĞÇ ßÇä ÇáãÓÊÎÏã ãæÌæÏğÇ ãÓÈŞğÇ.
+    /// </returns>
     bool TryAdd(string username, IClientHandler session);
 
-    bool TryGet(string username, out IClientHandler session);
+    /// <summary>
+    /// íÈÍË Úä ÌáÓÉ ãÓÊÎÏã ãÊÕá.
+    /// </summary>
+    /// <param name="username">ÇÓã ÇáãÓÊÎÏã.</param>
+    /// <param name="session">ÇáÌáÓÉ ÇáãÑÊÈØÉ ÈÇáãÓÊÎÏã.</param>
+    /// <returns>true ÅĞÇ Êã ÇáÚËæÑ Úáì ÇáãÓÊÎÏã.</returns>
+    bool TryGet(
+        string username,
+        out IClientHandler session);
 
+    /// <summary>
+    /// íÊÍŞŞ ãä ÇÊÕÇá ÇáãÓÊÎÏã ÍÇáíğÇ.
+    /// </summary>
+    /// <param name="username">ÇÓã ÇáãÓÊÎÏã.</param>
+    /// <returns>true ÅĞÇ ßÇä ÇáãÓÊÎÏã ãÊÕáğÇ.</returns>
     bool IsOnline(string username);
 
-    /// <summary>Removes <paramref name="username"/> only if it still maps to <paramref name="expectedSession"/> (guards against a stale/replaced session removing a newer one).</summary>
-    bool Remove(string username, IClientHandler expectedSession);
+    /// <summary>
+    /// íÒíá ÇáãÓÊÎÏã ãä ŞÇÆãÉ ÇáãÊÕáíä ÅĞÇ ßÇäÊ ÇáÌáÓÉ ÇáÍÇáíÉ
+    /// åí äİÓåÇ ÇáÌáÓÉ ÇáãÊæŞÚÉ.
+    /// </summary>
+    /// <param name="username">ÇÓã ÇáãÓÊÎÏã.</param>
+    /// <param name="expectedSession">ÇáÌáÓÉ ÇáãÑÇÏ ÇáÊÍŞŞ ãäåÇ.</param>
+    /// <returns>true ÅĞÇ ÊãÊ ÇáÅÒÇáÉ ÈäÌÇÍ.</returns>
+    bool Remove(
+        string username,
+        IClientHandler expectedSession);
 
+    /// <summary>
+    /// íÚíÏ ÃÓãÇÁ ÇáãÓÊÎÏãíä ÇáãÊÕáíä ÍÇáíğÇ.
+    /// </summary>
     IReadOnlyList<string> GetUsernames();
 
+    /// <summary>
+    /// íÚíÏ ÌáÓÇÊ ÇáãÓÊÎÏãíä ÇáãÊÕáíä ÍÇáíğÇ.
+    /// </summary>
     IReadOnlyList<IClientHandler> GetSessions();
 }

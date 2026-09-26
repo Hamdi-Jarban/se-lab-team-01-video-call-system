@@ -3,24 +3,49 @@ using VideoCall.Server.Domain;
 namespace VideoCall.Server.Infrastructure.Security;
 
 /// <summary>
-/// Development-only validator. Do not use in production. Replace it with a
-/// database-backed password-hash validator before deploying outside a lab
-/// LAN - because callers depend only on <see cref="ICredentialValidator"/>
-/// (Dependency Inversion Principle), that replacement is a one-file change:
-/// implement the interface and change one registration line in
-/// <c>Program.cs</c>.
+/// ÎÏãÉ ÊÍŞŞ ãÎÕÕÉ áÈíÆÉ ÇáÊØæíÑ æÇáÇÎÊÈÇÑ İŞØ.
+/// áÇ ÊÓÊÎÏã åĞå ÇáÎÏãÉ İí ÈíÆÉ ÇáÅäÊÇÌ áÃäåÇ ÊÚÊãÏ Úáì ßáãÇÊ ãÑæÑ
+/// ãÍİæÙÉ ßäÕ ãÈÇÔÑ ÏÇÎá ÇáĞÇßÑÉ.
+///
+/// ÚäÏ ÇáÇäÊŞÇá Åáì ÇáÅäÊÇÌ¡ íÌÈ ÇÓÊÈÏÇáåÇ ÈÊäİíĞ íÚÊãÏ Úáì ŞÇÚÏÉ ÈíÇäÇÊ
+/// æÊÎÒíä ßáãÇÊ ÇáãÑæÑ ÈÇÓÊÎÏÇã Hash Âãä. æÈãÇ Ãä ÈŞíÉ ÇáäÙÇã íÚÊãÏ Úáì
+/// ICredentialValidator¡ İÅä ÇÓÊÈÏÇá ÂáíÉ ÇáÊÍŞŞ áÇ íÊØáÈ ÊÚÏíá ãäØŞ ÇáÊØÈíŞ.
 /// </summary>
 public sealed class DevelopmentCredentialValidator : ICredentialValidator
 {
+    // íÍÊæí Úáì ÍÓÇÈÇÊ ÇáÊØæíÑ ÇáãÓãæÍ ÈÇÓÊÎÏÇãåÇ ÃËäÇÁ ÊÔÛíá ÇáÎÇÏã.
     private readonly IReadOnlyDictionary<string, string> _accounts;
 
-    public DevelopmentCredentialValidator(IReadOnlyDictionary<string, string> accounts)
+    /// <summary>
+    /// íäÔÆ ÎÏãÉ ÇáÊÍŞŞ ÈÇÓÊÎÏÇã ÍÓÇÈÇÊ ÇáÊØæíÑ.
+    /// </summary>
+    /// <param name="accounts">ŞÇãæÓ ÃÓãÇÁ ÇáãÓÊÎÏãíä æßáãÇÊ ÇáãÑæÑ.</param>
+    public DevelopmentCredentialValidator(
+        IReadOnlyDictionary<string, string> accounts)
     {
-        _accounts = new Dictionary<string, string>(accounts, StringComparer.OrdinalIgnoreCase);
+        // äÓÎ ÇáÈíÇäÇÊ ãÚ ÊÌÇåá ÍÇáÉ ÇáÃÍÑİ İí ÃÓãÇÁ ÇáãÓÊÎÏãíä.
+        _accounts = new Dictionary<string, string>(
+            accounts,
+            StringComparer.OrdinalIgnoreCase);
     }
 
-    public bool Validate(string username, string password) =>
-        !string.IsNullOrWhiteSpace(username) &&
-        _accounts.TryGetValue(username.Trim(), out var expected) &&
-        string.Equals(expected, password, StringComparison.Ordinal);
+    /// <summary>
+    /// íÊÍŞŞ ãä ÊØÇÈŞ ÇÓã ÇáãÓÊÎÏã æßáãÉ ÇáãÑæÑ.
+    /// </summary>
+    /// <param name="username">ÇÓã ÇáãÓÊÎÏã.</param>
+    /// <param name="password">ßáãÉ ÇáãÑæÑ.</param>
+    /// <returns>
+    /// true ÅĞÇ ßÇäÊ ÈíÇäÇÊ ÇáÏÎæá ÕÍíÍÉ¡ æÅáÇ false.
+    /// </returns>
+    public bool Validate(
+        string username,
+        string password) =>
+        !string.IsNullOrWhiteSpace(username)
+        && _accounts.TryGetValue(
+            username.Trim(),
+            out var expectedPassword)
+        && string.Equals(
+            expectedPassword,
+            password,
+            StringComparison.Ordinal);
 }
