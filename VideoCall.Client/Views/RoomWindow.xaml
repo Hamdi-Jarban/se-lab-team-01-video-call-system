@@ -1,12 +1,12 @@
 <Window x:Class="VideoCall.Client.Views.RoomWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="ÇáÛÑÝ ÇáÌãÇÚíÉ" Height="650" Width="900"
+        Title="Ø§Ù„ØºØ±Ù Ø§Ù„Ø¬Ù…Ø§Ø¹ÙŠØ©" Height="650" Width="900"
         MinHeight="560" MinWidth="760"
         WindowStartupLocation="CenterOwner"
         FlowDirection="RightToLeft">
     
-    <!-- ÊÞÓíã ÇáæÇÌåÉ Åáì 4 ÃÌÒÇÁ ÑÆíÓíÉ: ÇáÊÑæíÓÉ¡ ÅÏÎÇá ÇáÛÑÝÉ¡ ÊÝÇÕíá ÇáÛÑÝÉ¡ æÔÑíØ ÇáÊÍßã -->
+    <!-- ØªÙ‚Ø³ÙŠÙ… Ø§Ù„ÙˆØ§Ø¬Ù‡Ø© Ø¥Ù„Ù‰ 4 Ø£Ø¬Ø²Ø§Ø¡ Ø±Ø¦ÙŠØ³ÙŠØ©: Ø§Ù„ØªØ±ÙˆÙŠØ³Ø©ØŒ Ø¥Ø¯Ø®Ø§Ù„ Ø§Ù„ØºØ±ÙØ©ØŒ ØªÙØ§ØµÙŠÙ„ Ø§Ù„ØºØ±ÙØ©ØŒ ÙˆØ´Ø±ÙŠØ· Ø§Ù„ØªØ­ÙƒÙ… -->
     <Grid Margin="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -15,15 +15,15 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- ÇáÊÑæíÓÉ ÇáÚáæíÉ: ÚäÇæíä ÇáäÇÝÐÉ æÚÑÖ ÑÓÇÆá ÇáÍÇáÉ ÇáÚÇãÉ -->
+        <!-- Ø§Ù„ØªØ±ÙˆÙŠØ³Ø© Ø§Ù„Ø¹Ù„ÙˆÙŠØ©: Ø¹Ù†Ø§ÙˆÙŠÙ† Ø§Ù„Ù†Ø§ÙØ°Ø© ÙˆØ¹Ø±Ø¶ Ø±Ø³Ø§Ø¦Ù„ Ø§Ù„Ø­Ø§Ù„Ø© Ø§Ù„Ø¹Ø§Ù…Ø© -->
         <Grid Grid.Row="0" Margin="0,0,0,18">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <StackPanel>
-                <TextBlock Text="ÇáÛÑÝ ÇáÌãÇÚíÉ" Style="{StaticResource TitleText}" />
-                <TextBlock Text="ÃäÔÆ ÛÑÝÉ Ãæ ÇäÖã Åáì ãÍÇÏËÉ ÞÇÆãÉ"
+                <TextBlock Text="Ø§Ù„ØºØ±Ù Ø§Ù„Ø¬Ù…Ø§Ø¹ÙŠØ©" Style="{StaticResource TitleText}" />
+                <TextBlock Text="Ø£Ù†Ø´Ø¦ ØºØ±ÙØ© Ø£Ùˆ Ø§Ù†Ø¶Ù… Ø¥Ù„Ù‰ Ù…Ø­Ø§Ø¯Ø«Ø© Ù‚Ø§Ø¦Ù…Ø©"
                            Style="{StaticResource SubtitleText}" Margin="0,6,0,0" />
             </StackPanel>
             <Border Grid.Column="1" Background="#172554" CornerRadius="8" Padding="14,8">
@@ -31,7 +31,7 @@
             </Border>
         </Grid>
 
-        <!-- ÈØÇÞÉ ÇáÅäÔÇÁ æÇáÇäÖãÇã: ÊõÚØá ÇáÍÞæá ÊáÞÇÆíÇð ÈãÌÑÏ ÇáÏÎæá áÛÑÝÉ (ÇÑÊÈÇØ ÚßÓí ãÚ HasRoom) -->
+        <!-- Ø¨Ø·Ø§Ù‚Ø© Ø§Ù„Ø¥Ù†Ø´Ø§Ø¡ ÙˆØ§Ù„Ø§Ù†Ø¶Ù…Ø§Ù…: ØªÙØ¹Ø·Ù„ Ø§Ù„Ø­Ù‚ÙˆÙ„ ØªÙ„Ù‚Ø§Ø¦ÙŠØ§Ù‹ Ø¨Ù…Ø¬Ø±Ø¯ Ø§Ù„Ø¯Ø®ÙˆÙ„ Ù„ØºØ±ÙØ© (Ø§Ø±ØªØ¨Ø§Ø· Ø¹ÙƒØ³ÙŠ Ù…Ø¹ HasRoom) -->
         <Border Grid.Row="1" Style="{StaticResource CardStyle}" Margin="0,0,0,18">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -40,21 +40,21 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0">
-                    <TextBlock Text="ãÚÑÝ ÇáÛÑÝÉ" Style="{StaticResource FieldLabel}" />
+                    <TextBlock Text="Ù…Ø¹Ø±Ù Ø§Ù„ØºØ±ÙØ©" Style="{StaticResource FieldLabel}" />
                     <TextBox Style="{StaticResource RoundedTextBox}"
                              Text="{Binding RoomId, UpdateSourceTrigger=PropertyChanged}"
                              IsEnabled="{Binding HasRoom, Converter={StaticResource InverseBooleanConverter}}" />
                 </StackPanel>
-                <Button Grid.Column="1" Content="ÅäÔÇÁ ÛÑÝÉ" Style="{StaticResource PrimaryButton}"
+                <Button Grid.Column="1" Content="Ø¥Ù†Ø´Ø§Ø¡ ØºØ±ÙØ©" Style="{StaticResource PrimaryButton}"
                         Command="{Binding CreateRoomCommand}" Margin="12,20,4,0"
                         IsEnabled="{Binding HasRoom, Converter={StaticResource InverseBooleanConverter}}" />
-                <Button Grid.Column="2" Content="ÇäÖãÇã" Style="{StaticResource SecondaryButton}"
+                <Button Grid.Column="2" Content="Ø§Ù†Ø¶Ù…Ø§Ù…" Style="{StaticResource SecondaryButton}"
                         Command="{Binding JoinRoomCommand}" Margin="4,20,0,0"
                         IsEnabled="{Binding HasRoom, Converter={StaticResource InverseBooleanConverter}}" />
             </Grid>
         </Border>
 
-        <!-- ãäØÞÉ ÊÝÇÕíá ÇáÛÑÝÉ æÞÇÆãÉ ÇáÃÚÖÇÁ: áÇ ÊÙåÑ ÅáÇ ÅÐÇ ßÇä ÇáãÓÊÎÏã ÏÇÎá ÛÑÝÉ ÝÚáíÉ (Visibility ãÑÊÈØ ÈÜ HasRoom) -->
+        <!-- Ù…Ù†Ø·Ù‚Ø© ØªÙØ§ØµÙŠÙ„ Ø§Ù„ØºØ±ÙØ© ÙˆÙ‚Ø§Ø¦Ù…Ø© Ø§Ù„Ø£Ø¹Ø¶Ø§Ø¡: Ù„Ø§ ØªØ¸Ù‡Ø± Ø¥Ù„Ø§ Ø¥Ø°Ø§ ÙƒØ§Ù† Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù… Ø¯Ø§Ø®Ù„ ØºØ±ÙØ© ÙØ¹Ù„ÙŠØ© (Visibility Ù…Ø±ØªØ¨Ø· Ø¨Ù€ HasRoom) -->
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
@@ -62,22 +62,22 @@
                 <ColumnDefinition Width="285" />
             </Grid.ColumnDefinitions>
 
-            <!-- ãÚáæãÇÊ ÇáÛÑÝÉ ÇáÍÇáíÉ æÇáãÖíÝ -->
+            <!-- Ù…Ø¹Ù„ÙˆÙ…Ø§Øª Ø§Ù„ØºØ±ÙØ© Ø§Ù„Ø­Ø§Ù„ÙŠØ© ÙˆØ§Ù„Ù…Ø¶ÙŠÙ -->
             <Border Grid.Column="0" Background="#020617" CornerRadius="12" Padding="26"
                     Visibility="{Binding HasRoom, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="{Binding RoomId, StringFormat='ÇáÛÑÝÉ ÇáÍÇáíÉ: {0}'}"
+                    <TextBlock Text="{Binding RoomId, StringFormat='Ø§Ù„ØºØ±ÙØ© Ø§Ù„Ø­Ø§Ù„ÙŠØ©: {0}'}"
                                FontSize="24" FontWeight="SemiBold" Foreground="#F8FAFC" />
-                    <TextBlock Text="{Binding Host, StringFormat='ÇáãÖíÝ: {0}'}"
+                    <TextBlock Text="{Binding Host, StringFormat='Ø§Ù„Ù…Ø¶ÙŠÙ: {0}'}"
                                Foreground="#93C5FD" Margin="0,8,0,18" />
-                    <TextBlock Text="{Binding IsMediaActive, StringFormat='ÍÇáÉ ÇáæÓÇÆØ: {0}'}"
+                    <TextBlock Text="{Binding IsMediaActive, StringFormat='Ø­Ø§Ù„Ø© Ø§Ù„ÙˆØ³Ø§Ø¦Ø·: {0}'}"
                                Foreground="#CBD5E1" />
-                    <TextBlock Text="íãßä ááãÖíÝ ÈÏÁ ÇáãÍÇÏËÉ ÈÚÏ ÇßÊãÇá ÞÇÆãÉ ÇáÃÚÖÇÁ."
+                    <TextBlock Text="ÙŠÙ…ÙƒÙ† Ù„Ù„Ù…Ø¶ÙŠÙ Ø¨Ø¯Ø¡ Ø§Ù„Ù…Ø­Ø§Ø¯Ø«Ø© Ø¨Ø¹Ø¯ Ø§ÙƒØªÙ…Ø§Ù„ Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„Ø£Ø¹Ø¶Ø§Ø¡."
                                Foreground="#64748B" TextWrapping="Wrap" Margin="0,12,0,0" />
                 </StackPanel>
             </Border>
 
-            <!-- ÇáÞÇÆãÉ ÇáÌÇäÈíÉ ááÃÚÖÇÁ æÅÖÇÝÉ ãÓÊÎÏãíä ÌÏÏ -->
+            <!-- Ø§Ù„Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„Ø¬Ø§Ù†Ø¨ÙŠØ© Ù„Ù„Ø£Ø¹Ø¶Ø§Ø¡ ÙˆØ¥Ø¶Ø§ÙØ© Ù…Ø³ØªØ®Ø¯Ù…ÙŠÙ† Ø¬Ø¯Ø¯ -->
             <Border Grid.Column="2" Style="{StaticResource CardStyle}"
                     Visibility="{Binding HasRoom, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Grid>
@@ -87,7 +87,7 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <DockPanel Grid.Row="0" Margin="0,0,0,10">
-                        <TextBlock Text="ÇáÃÚÖÇÁ" Style="{StaticResource FieldLabel}" />
+                        <TextBlock Text="Ø§Ù„Ø£Ø¹Ø¶Ø§Ø¡" Style="{StaticResource FieldLabel}" />
                         <TextBlock Text="{Binding Members.Count, StringFormat=' ({0})'}" Foreground="#64748B" />
                     </DockPanel>
                     <ListBox Grid.Row="1" ItemsSource="{Binding Members}" Background="Transparent" BorderThickness="0">
@@ -103,27 +103,27 @@
                         </ListBox.ItemTemplate>
                     </ListBox>
                     <StackPanel Grid.Row="2" Margin="0,14,0,0">
-                        <TextBlock Text="ÅÖÇÝÉ ãÓÊÎÏã ãÊÕá" Style="{StaticResource FieldLabel}" />
+                        <TextBlock Text="Ø¥Ø¶Ø§ÙØ© Ù…Ø³ØªØ®Ø¯Ù… Ù…ØªØµÙ„" Style="{StaticResource FieldLabel}" />
                         <TextBox Style="{StaticResource RoundedTextBox}"
                                  Text="{Binding NewMemberUsername, UpdateSourceTrigger=PropertyChanged}" />
-                        <Button Content="ÅÖÇÝÉ ÚÖæ" Style="{StaticResource SecondaryButton}"
+                        <Button Content="Ø¥Ø¶Ø§ÙØ© Ø¹Ø¶Ùˆ" Style="{StaticResource SecondaryButton}"
                                 Command="{Binding AddUserCommand}" IsEnabled="{Binding IsMediaActive, Converter={StaticResource InverseBooleanConverter}}" />
                     </StackPanel>
                 </Grid>
             </Border>
         </Grid>
 
-        <!-- ÔÑíØ ÇáÊÍßã ÇáÓÝáí: ÃÒÑÇÑ ÅÏÇÑÉ ÇáæÓÇÆØ (ãÑÈæØÉ ÈÕáÇÍíÉ ÇáãÖíÝ IsHost) æÇáãÛÇÏÑÉ -->
+        <!-- Ø´Ø±ÙŠØ· Ø§Ù„ØªØ­ÙƒÙ… Ø§Ù„Ø³ÙÙ„ÙŠ: Ø£Ø²Ø±Ø§Ø± Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„ÙˆØ³Ø§Ø¦Ø· (Ù…Ø±Ø¨ÙˆØ·Ø© Ø¨ØµÙ„Ø§Ø­ÙŠØ© Ø§Ù„Ù…Ø¶ÙŠÙ IsHost) ÙˆØ§Ù„Ù…ØºØ§Ø¯Ø±Ø© -->
         <DockPanel Grid.Row="3" Margin="0,18,0,0">
             <TextBlock Text="{Binding StatusMessage}" Foreground="#FCA5A5" TextWrapping="Wrap" VerticalAlignment="Center" />
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                <Button Content="ÈÏÁ ÇáãÍÇÏËÉ" Style="{StaticResource PrimaryButton}"
+                <Button Content="Ø¨Ø¯Ø¡ Ø§Ù„Ù…Ø­Ø§Ø¯Ø«Ø©" Style="{StaticResource PrimaryButton}"
                         Command="{Binding StartMediaCommand}"
                         IsEnabled="{Binding IsHost}" />
-                <Button Content="ÅíÞÇÝ ÇáæÓÇÆØ" Style="{StaticResource SecondaryButton}"
+                <Button Content="Ø¥ÙŠÙ‚Ø§Ù Ø§Ù„ÙˆØ³Ø§Ø¦Ø·" Style="{StaticResource SecondaryButton}"
                         Command="{Binding StopMediaCommand}"
                         IsEnabled="{Binding IsMediaActive}" />
-                <Button Content="ãÛÇÏÑÉ ÇáÛÑÝÉ" Style="{StaticResource DangerButton}"
+                <Button Content="Ù…ØºØ§Ø¯Ø±Ø© Ø§Ù„ØºØ±ÙØ©" Style="{StaticResource DangerButton}"
                         Command="{Binding LeaveRoomCommand}" />
             </StackPanel>
         </DockPanel>
