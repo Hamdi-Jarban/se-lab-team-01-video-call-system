@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Windows;
 using System.Windows.Input;
 using VideoCall.Client.Services;
 using VideoCall.Shared.Messages;
@@ -6,7 +7,7 @@ using VideoCall.Client.Contracts;
 
 namespace VideoCall.Client.ViewModels;
 
-// «·‰„Ê–Ã «·„”ƒÊ· ⁄‰ ≈œ«—…  ›«’Ì· «·€—›…° «·√⁄÷«¡° Ê«· Õﬂ„ »«·Ê”«∆ÿ (··„÷Ì› Ê«·„‘«—ﬂÌ‰)
+// √á√°√§√£√¶√ê√å √á√°√£√ì√Ñ√¶√° √ö√§ √Ö√è√á√ë√â √ä√ù√á√ï√≠√° √á√°√õ√ë√ù√â¬° √á√°√É√ö√ñ√á√Å¬° √¶√á√°√ä√ç√ü√£ √à√á√°√¶√ì√á√Ü√ò (√°√°√£√ñ√≠√ù √¶√á√°√£√î√á√ë√ü√≠√§)
 public sealed class RoomViewModel : ViewModelBase, IDisposable
 {
     private readonly INetworkClient _network;
@@ -18,8 +19,9 @@ public sealed class RoomViewModel : ViewModelBase, IDisposable
     private bool _isMediaActive;
     private Guid _mediaId;
 
-    // ﬁ«∆„… »√”„«¡ «·√⁄÷«¡ «·„ Ê«ÃœÌ‰ Õ«·Ì« ›Ì «·€—›… ··—»ÿ „⁄ Ê«ÃÂ… «·„” Œœ„
+    // √û√á√Ü√£√â √à√É√ì√£√á√Å √á√°√É√ö√ñ√á√Å √á√°√£√ä√¶√á√å√è√≠√§ √ç√á√°√≠√á√∞ √ù√≠ √á√°√õ√ë√ù√â √°√°√ë√à√ò √£√ö √¶√á√å√•√â √á√°√£√ì√ä√é√è√£
     public ObservableCollection<string> Members { get; } = new();
+    public ObservableCollection<string> OnlineUsers { get; }
 
     public string RoomId { get => _roomId; set => SetField(ref _roomId, value); }
     public string Host { get => _host; private set => SetField(ref _host, value); }
@@ -29,10 +31,10 @@ public sealed class RoomViewModel : ViewModelBase, IDisposable
     public bool IsMediaActive { get => _isMediaActive; private set => SetField(ref _isMediaActive, value); }
     public Guid MediaId { get => _mediaId; private set => SetField(ref _mediaId, value); }
 
-    // «· Õﬁﬁ „„« ≈–« ﬂ«‰ «·„” Œœ„ «·Õ«·Ì ÂÊ „÷Ì› «·€—›… (Host)
+    // √á√°√ä√ç√û√û √£√£√á √Ö√ê√á √ü√á√§ √á√°√£√ì√ä√é√è√£ √á√°√ç√á√°√≠ √•√¶ √£√ñ√≠√ù √á√°√õ√ë√ù√â (Host)
     public bool IsHost => string.Equals(Host, _network.Username, StringComparison.OrdinalIgnoreCase);
 
-    // √Ê«„— «· Õﬂ„ «·√”«”Ì… »«·€—›…
+    // √É√¶√á√£√ë √á√°√ä√ç√ü√£ √á√°√É√ì√á√ì√≠√â √à√á√°√õ√ë√ù√â
     public ICommand CreateRoomCommand { get; }
     public ICommand JoinRoomCommand { get; }
     public ICommand AddUserCommand { get; }
@@ -40,16 +42,18 @@ public sealed class RoomViewModel : ViewModelBase, IDisposable
     public ICommand StopMediaCommand { get; }
     public ICommand LeaveRoomCommand { get; }
 
-    // √Õœ«À · ‰»ÌÂ «·Ê«ÃÂ… ⁄‰œ »œ¡ √Ê ≈Ìﬁ«› «·„Õ«œÀ… «·Ã„«⁄Ì…
+    // √É√ç√è√á√ã √°√ä√§√à√≠√• √á√°√¶√á√å√•√â √ö√§√è √à√è√Å √É√¶ √Ö√≠√û√á√ù √á√°√£√ç√á√è√ã√â √á√°√å√£√á√ö√≠√â
     public event Action<RoomMediaPayload>? GroupMediaStarted;
     public event Action<RoomMediaPayload>? GroupMediaStopped;
 
-    public RoomViewModel(INetworkClient network)
+    public RoomViewModel(INetworkClient network, ObservableCollection<string>? onlineUsers = null)
     {
         _network = network ?? throw new ArgumentNullException(nameof(network));
+        OnlineUsers = onlineUsers ?? new ObservableCollection<string>();
 
-        // «·«‘ —«ﬂ ›Ì √Õœ«À «·‘»ﬂ… «·Œ«’… »«·€—›… «·Ê«—œ… „‰ «·Œ«œ„
+        // √á√°√á√î√ä√ë√á√ü √ù√≠ √É√ç√è√á√ã √á√°√î√à√ü√â √á√°√é√á√ï√â √à√á√°√õ√ë√ù√â √á√°√¶√á√ë√è√â √£√§ √á√°√é√á√è√£
         _network.RoomUpdated += OnRoomUpdated;
+        _network.OnlineUsersUpdated += OnOnlineUsersUpdated;
         _network.RoomError += OnRoomError;
         _network.RoomMediaStarted += OnRoomMediaStarted;
         _network.RoomMediaStopped += OnRoomMediaStopped;
@@ -58,7 +62,7 @@ public sealed class RoomViewModel : ViewModelBase, IDisposable
         {
             if (!HasRoom && !string.IsNullOrWhiteSpace(RoomId))
             {
-                StatusMessage = "Ã«—Ì ≈‰‘«¡ «·€—›…...";
+                StatusMessage = "√å√á√ë√≠ √Ö√§√î√á√Å √á√°√õ√ë√ù√â...";
                 await _network.CreateRoomAsync(RoomId.Trim());
             }
         });
@@ -67,12 +71,12 @@ public sealed class RoomViewModel : ViewModelBase, IDisposable
         {
             if (!HasRoom && !string.IsNullOrWhiteSpace(RoomId))
             {
-                StatusMessage = "Ã«—Ì «·«‰÷„«„ ≈·Ï «·€—›…...";
+                StatusMessage = "√å√á√ë√≠ √á√°√á√§√ñ√£√á√£ √Ö√°√¨ √á√°√õ√ë√ù√â...";
                 await _network.JoinRoomAsync(RoomId.Trim());
             }
         });
 
-        // ≈÷«›… „” Œœ„ ÃœÌœ ··€—›…
+        // √Ö√ñ√á√ù√â √£√ì√ä√é√è√£ √å√è√≠√è √°√°√õ√ë√ù√â
         AddUserCommand = new AsyncCommand(async () =>
         {
             if (!HasRoom || IsMediaActive || string.IsNullOrWhiteSpace(NewMemberUsername))
@@ -81,16 +85,16 @@ public sealed class RoomViewModel : ViewModelBase, IDisposable
             NewMemberUsername = string.Empty;
         });
 
-        // »œ¡ »À «·Ê”«∆ÿ «·Ã„«⁄Ì… (Ìı”„Õ ··„÷Ì› ›ﬁÿ)
+        // √à√è√Å √à√ã √á√°√¶√ì√á√Ü√ò √á√°√å√£√á√ö√≠√â (√≠√µ√ì√£√ç √°√°√£√ñ√≠√ù √ù√û√ò)
         StartMediaCommand = new AsyncCommand(async () =>
         {
             if (!HasRoom || !IsHost || IsMediaActive)
                 return;
-            StatusMessage = "Ã«—Ì »œ¡ «·„Õ«œÀ… «·Ã„«⁄Ì…...";
+            StatusMessage = "√å√á√ë√≠ √à√è√Å √á√°√£√ç√á√è√ã√â √á√°√å√£√á√ö√≠√â...";
             await _network.StartRoomMediaAsync(RoomId.Trim());
         });
 
-        // ≈Ìﬁ«› »À «·Ê”«∆ÿ «·Ã„«⁄Ì… (Ìı”„Õ ··„÷Ì› ›ﬁÿ)
+        // √Ö√≠√û√á√ù √à√ã √á√°√¶√ì√á√Ü√ò √á√°√å√£√á√ö√≠√â (√≠√µ√ì√£√ç √°√°√£√ñ√≠√ù √ù√û√ò)
         StopMediaCommand = new AsyncCommand(async () =>
         {
             if (!HasRoom || !IsHost || !IsMediaActive)
@@ -103,63 +107,85 @@ public sealed class RoomViewModel : ViewModelBase, IDisposable
             if (!HasRoom)
                 return;
             await _network.LeaveRoomAsync(RoomId.Trim());
-            ResetRoom(" „  „€«œ—… «·€—›….");
+            ResetRoom("√ä√£√ä √£√õ√á√è√ë√â √á√°√õ√ë√ù√â.");
         });
     }
 
-    //  ÕœÌÀ Õ«·… «·€—›… Êﬁ«∆„… «·√⁄÷«¡ Ê„÷Ì›Â« ⁄‰œ  ·ﬁÌ  ÕœÌÀ „‰ «·Œ«œ„
+    // √ä√ç√è√≠√ã √ç√á√°√â √á√°√õ√ë√ù√â √¶√û√á√Ü√£√â √á√°√É√ö√ñ√á√Å √¶√£√ñ√≠√ù√•√á √ö√§√è √ä√°√û√≠ √ä√ç√è√≠√ã √£√§ √á√°√é√á√è√£
+    private void OnOnlineUsersUpdated(OnlineUsersUpdatePayload payload)
+    {
+        var update = new Action(() =>
+        {
+            OnlineUsers.Clear();
+            foreach (var username in payload.Usernames
+                         .Where(user => !user.Equals(_network.Username, StringComparison.OrdinalIgnoreCase))
+                         .Distinct(StringComparer.OrdinalIgnoreCase))
+                OnlineUsers.Add(username);
+        });
+
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher is null || dispatcher.CheckAccess()) update();
+        else dispatcher.BeginInvoke(update);
+    }
+
     private void OnRoomUpdated(RoomUpdatePayload payload)
     {
         if (HasRoom && !string.Equals(payload.RoomId, RoomId, StringComparison.OrdinalIgnoreCase))
             return;
+        var previousMembers = Members.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var updatedMembers = payload.Members.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        var removedMembers = previousMembers.Except(updatedMembers, StringComparer.OrdinalIgnoreCase).ToList();
+
         RoomId = payload.RoomId;
         Host = payload.Host;
         Members.Clear();
-        foreach (var member in payload.Members.Distinct(StringComparer.OrdinalIgnoreCase))
+        foreach (var member in updatedMembers)
             Members.Add(member);
         HasRoom = true;
-        Raise(nameof(IsHost)); //  ÕœÌÀ Õ«·… IsHost ›Ì «·Ê«ÃÂ…
-        StatusMessage = IsHost ? "√‰  „÷Ì› «·€—›…." : " „  ÕœÌÀ √⁄÷«¡ «·€—›….";
+        Raise(nameof(IsHost)); // √ä√ç√è√≠√ã √ç√á√°√â IsHost √ù√≠ √á√°√¶√á√å√•√â
+        StatusMessage = removedMembers.Count == 1
+            ? $"ÿ∫ÿßÿØÿ± {removedMembers[0]} ÿßŸÑÿ∫ÿ±ŸÅÿ©."
+            : IsHost ? "ÿ£ŸÜÿ™ ŸÖÿ∂ŸäŸÅ ÿßŸÑÿ∫ÿ±ŸÅÿ©." : "ÿ™ŸÖ ÿ™ÿ≠ÿØŸäÿ´ ÿ£ÿπÿ∂ÿßÿ° ÿßŸÑÿ∫ÿ±ŸÅÿ©.";
     }
 
-    // „⁄«·Ã… ÕœÀ »œ¡ «·Ê”«∆ÿ Ê≈ÿ·«ﬁ ÕœÀ ··Ê«ÃÂ… ·»œ¡ «·⁄—÷
+    // √£√ö√á√°√å√â √ç√è√ã √à√è√Å √á√°√¶√ì√á√Ü√ò √¶√Ö√ò√°√á√û √ç√è√ã √°√°√¶√á√å√•√â √°√à√è√Å √á√°√ö√ë√ñ
     private void OnRoomMediaStarted(RoomMediaPayload payload)
     {
         if (!string.Equals(payload.RoomId, RoomId, StringComparison.OrdinalIgnoreCase))
             return;
         MediaId = payload.MediaId;
         IsMediaActive = true;
-        StatusMessage = "»œ√  «·„Õ«œÀ… «·Ã„«⁄Ì….";
+        StatusMessage = "√à√è√É√ä √á√°√£√ç√á√è√ã√â √á√°√å√£√á√ö√≠√â.";
         GroupMediaStarted?.Invoke(payload);
     }
 
-    // „⁄«·Ã… ÕœÀ ≈Ìﬁ«› «·Ê”«∆ÿ
+    // √£√ö√á√°√å√â √ç√è√ã √Ö√≠√û√á√ù √á√°√¶√ì√á√Ü√ò
     private void OnRoomMediaStopped(RoomMediaPayload payload)
     {
         if (!string.Equals(payload.RoomId, RoomId, StringComparison.OrdinalIgnoreCase))
             return;
         IsMediaActive = false;
         MediaId = Guid.Empty;
-        StatusMessage = " „ ≈Ìﬁ«› «·„Õ«œÀ… «·Ã„«⁄Ì….";
+        StatusMessage = "√ä√£ √Ö√≠√û√á√ù √á√°√£√ç√á√è√ã√â √á√°√å√£√á√ö√≠√â.";
         GroupMediaStopped?.Invoke(payload);
     }
 
-    //  ÕÊÌ· —„Ê“ «·√Œÿ«¡ «·ﬁ«œ„… „‰ «·Œ«œ„ ≈·Ï —”«∆· Ê«÷Õ… Ê„ﬁ—Ê¡… ··„” Œœ„
+    // √ä√ç√¶√≠√° √ë√£√¶√í √á√°√É√é√ò√á√Å √á√°√û√á√è√£√â √£√§ √á√°√é√á√è√£ √Ö√°√¨ √ë√ì√á√Ü√° √¶√á√ñ√ç√â √¶√£√û√ë√¶√Å√â √°√°√£√ì√ä√é√è√£
     private void OnRoomError(RoomErrorPayload payload)
     {
         StatusMessage = payload.ErrorCode switch
         {
-            ErrorCodes.RoomAlreadyExists => "«·€—›… „ÊÃÊœ… »«·›⁄·.",
-            ErrorCodes.RoomNotFound => "«·€—›… €Ì— „ÊÃÊœ….",
-            ErrorCodes.RoomFull => "«·€—›… „„ ·∆….",
-            ErrorCodes.UserNotFound => "«·„” Œœ„ €Ì— „ ’·.",
-            ErrorCodes.NotRoomMember => "√‰  ·”  ⁄÷Ê« √Ê ·«  „·ﬂ «·’·«ÕÌ….",
-            ErrorCodes.MediaAlreadyStarted => "«·„Õ«œÀ… «·Ã„«⁄Ì… »œ√  »«·›⁄·.",
+            ErrorCodes.RoomAlreadyExists => "√á√°√õ√ë√ù√â √£√¶√å√¶√è√â √à√á√°√ù√ö√°.",
+            ErrorCodes.RoomNotFound => "√á√°√õ√ë√ù√â √õ√≠√ë √£√¶√å√¶√è√â.",
+            ErrorCodes.RoomFull => "√á√°√õ√ë√ù√â √£√£√ä√°√Ü√â.",
+            ErrorCodes.UserNotFound => "√á√°√£√ì√ä√é√è√£ √õ√≠√ë √£√ä√ï√°.",
+            ErrorCodes.NotRoomMember => "√É√§√ä √°√ì√ä √ö√ñ√¶√∞√á √É√¶ √°√á √ä√£√°√ü √á√°√ï√°√á√ç√≠√â.",
+            ErrorCodes.MediaAlreadyStarted => "√á√°√£√ç√á√è√ã√â √á√°√å√£√á√ö√≠√â √à√è√É√ä √à√á√°√ù√ö√°.",
             _ => payload.Message
         };
     }
 
-    // ≈⁄«œ… ÷»ÿ Ã„Ì⁄ „ €Ì—«  «·€—›… ≈·Ï Õ«· Â« «·«› —«÷Ì… ⁄‰œ «·„€«œ—…
+    // √Ö√ö√á√è√â √ñ√à√ò √å√£√≠√ö √£√ä√õ√≠√ë√á√ä √á√°√õ√ë√ù√â √Ö√°√¨ √ç√á√°√ä√•√á √á√°√á√ù√ä√ë√á√ñ√≠√â √ö√§√è √á√°√£√õ√á√è√ë√â
     private void ResetRoom(string message)
     {
         HasRoom = false;
@@ -171,10 +197,11 @@ public sealed class RoomViewModel : ViewModelBase, IDisposable
         StatusMessage = message;
     }
 
-    //  Õ—Ì— «·„Ê«—œ Ê≈·€«¡ «·«‘ —«ﬂ „‰ √Õœ«À «·‘»ﬂ… ·„‰⁄  ”—» «·–«ﬂ—… (Memory Leaks)
+    // √ä√ç√ë√≠√ë √á√°√£√¶√á√ë√è √¶√Ö√°√õ√á√Å √á√°√á√î√ä√ë√á√ü √£√§ √É√ç√è√á√ã √á√°√î√à√ü√â √°√£√§√ö √ä√ì√ë√à √á√°√ê√á√ü√ë√â (Memory Leaks)
     public void Dispose()
     {
         _network.RoomUpdated -= OnRoomUpdated;
+        _network.OnlineUsersUpdated -= OnOnlineUsersUpdated;
         _network.RoomError -= OnRoomError;
         _network.RoomMediaStarted -= OnRoomMediaStarted;
         _network.RoomMediaStopped -= OnRoomMediaStopped;

@@ -37,18 +37,30 @@ public class NetworkClient : INetworkClient
     public event Action<RoomInviteAcceptedPayload>? RoomInviteAccepted;
     public event Action<RoomInviteRejectedPayload>? RoomInviteRejected;
 
+    public event Action<RegisterResponsePayload>? RegisterResponseReceived;
+    public event Action<ConversationOpenedPayload>? ConversationOpened;
+    public event Action<ConversationMembersPayload>? ConversationMembersUpdated;
+    public event Action<ConversationRemovedPayload>? ConversationRemoved;
+    public event Action<MessageReceivedPayload>? ChatMessageReceived;
+    public event Action<GetConversationsResponsePayload>? ConversationsLoaded;
+    public event Action<GetMessagesResponsePayload>? MessagesLoaded;
+    public event Action<ChatErrorPayload>? ChatErrorReceived;
+    public event Action<MessageEditedPayload>? MessageEdited;
+    public event Action<MessageDeletedPayload>? MessageDeleted;
+
     /// الاتصال بخادم التحكم عبر بروتوكول TCP وبدء حلقة الاستماع الخلفية.
     public async Task<bool> ConnectAsync(string host)
     {
         try
         {
             _disconnectedRaised = false;
+            var generation = Interlocked.Increment(ref _generation);
             _tcpClient = new TcpClient();
             await _tcpClient.ConnectAsync(host, NetworkConfig.TcpControlPort);
             ServerHost = host;
             _framing = new TcpMessageReaderWriter(_tcpClient.GetStream());
             _cts = new CancellationTokenSource();
-            _ = ReadLoopAsync(_cts.Token);
+            _ = ReadLoopAsync(_cts.Token, generation);
             return true;
         }
         catch (Exception)
@@ -101,6 +113,61 @@ public class NetworkClient : INetworkClient
             new StopRoomMediaPayload(roomId, mediaId)));
 
     /// إرسال رسالة مسلسلة عبر اتصال TCP.
+    public Task RegisterAsync(string username, string password, string? displayName) =>
+        SendAsync(Message.Create(MessageType.RegisterRequest, new RegisterRequestPayload(username, password, displayName)));
+
+    public async Task LogoutAsync()
+    {
+        // نخبر الخادم أولًا ليُغلق الجلسة في SQL، ثم نُنهي الاتصال محليًا
+        await SendAsync(Message.Create(MessageType.Disconnect, new ErrorPayload("LOGOUT", "Client logout")));
+        ResetConnection();
+    }
+
+    public Task OpenPrivateChatAsync(string username) =>
+        SendAsync(Message.Create(MessageType.OpenPrivateChatRequest, new OpenPrivateChatRequestPayload(username)));
+
+    public Task CreateGroupAsync(string name, IReadOnlyList<string> memberUsernames) =>
+        SendAsync(Message.Create(MessageType.CreateGroupRequest, new CreateGroupRequestPayload(name, memberUsernames.ToList())));
+
+    public Task AddGroupMembersAsync(int conversationId, IReadOnlyList<string> usernames) =>
+        SendAsync(Message.Create(MessageType.AddGroupMembersRequest, new AddGroupMembersRequestPayload(conversationId, usernames.ToList())));
+
+    public Task RemoveGroupMemberAsync(int conversationId, string username) =>
+        SendAsync(Message.Create(MessageType.RemoveGroupMemberRequest, new RemoveGroupMemberRequestPayload(conversationId, username)));
+
+    public Task GetGroupMembersAsync(int conversationId) =>
+        SendAsync(Message.Create(MessageType.GetGroupMembersRequest, new GetGroupMembersRequestPayload(conversationId)));
+
+    public Task SendChatMessageAsync(int conversationId, string content) =>
+        SendAsync(Message.Create(MessageType.SendMessageRequest, new SendMessageRequestPayload(conversationId, content)));
+
+    public Task EditChatMessageAsync(int conversationId, long messageId, string content) =>
+        SendAsync(Message.Create(MessageType.EditMessageRequest, new EditMessageRequestPayload(conversationId, messageId, content)));
+
+    public Task DeleteChatMessageAsync(int conversationId, long messageId) =>
+        SendAsync(Message.Create(MessageType.DeleteMessageRequest, new DeleteMessageRequestPayload(conversationId, messageId)));
+
+    public Task GetConversationsAsync() =>
+        SendAsync(Message.Create(MessageType.GetConversationsRequest, new GetConversationsRequestPayload()));
+
+    public Task GetMessagesAsync(int conversationId, long? beforeMessageId = null, int limit = 50) =>
+        SendAsync(Message.Create(MessageType.GetMessagesRequest, new GetMessagesRequestPayload(conversationId, beforeMessageId, limit)));
+
+    private void ResetConnection()
+    {
+        Interlocked.Increment(ref _generation);
+        _disconnectedRaised = true;
+
+        try { _cts?.Cancel(); } catch { }
+        try { _tcpClient?.Close(); } catch { }
+
+        _tcpClient = null;
+        _framing = null;
+        _cts = null;
+        Username = null;
+        SessionToken = null;
+    }
+
     private async Task SendAsync(Message message)
     {
         if (_framing is null || _cts is null)
@@ -119,7 +186,7 @@ public class NetworkClient : INetworkClient
     }
 
     /// حلقة القراءة الخلفية لاستقبال الرسائل القادمة من السيرفر باستمرار.
-    private async Task ReadLoopAsync(CancellationToken ct)
+    private async Task ReadLoopAsync(CancellationToken ct, int generation)
     {
         try
         {
@@ -145,7 +212,8 @@ public class NetworkClient : INetworkClient
         }
         finally
         {
-            RaiseDisconnected();
+            // اتصال قديم أُغلق عمدًا (تسجيل خروج) لا يجب أن يُطلق Disconnected لاتصال جديد
+            if (generation == Volatile.Read(ref _generation)) RaiseDisconnected();
         }
     }
 
@@ -221,10 +289,58 @@ public class NetworkClient : INetworkClient
             case MessageType.RoomInviteRejected:
                 Raise(() => RoomInviteRejected?.Invoke(message.ReadPayload<RoomInviteRejectedPayload>()!));
                 break;
+
+            case MessageType.RegisterResponse:
+                DispatchPayload<RegisterResponsePayload>(message, p => RegisterResponseReceived?.Invoke(p));
+                break;
+
+            case MessageType.ConversationOpened:
+                DispatchPayload<ConversationOpenedPayload>(message, p => ConversationOpened?.Invoke(p));
+                break;
+
+            case MessageType.ConversationMembersUpdate:
+                DispatchPayload<ConversationMembersPayload>(message, p => ConversationMembersUpdated?.Invoke(p));
+                break;
+
+            case MessageType.ConversationRemoved:
+                DispatchPayload<ConversationRemovedPayload>(message, p => ConversationRemoved?.Invoke(p));
+                break;
+
+            case MessageType.MessageReceived:
+                DispatchPayload<MessageReceivedPayload>(message, p => ChatMessageReceived?.Invoke(p));
+                break;
+
+            case MessageType.GetConversationsResponse:
+                DispatchPayload<GetConversationsResponsePayload>(message, p => ConversationsLoaded?.Invoke(p));
+                break;
+
+            case MessageType.GetMessagesResponse:
+                DispatchPayload<GetMessagesResponsePayload>(message, p => MessagesLoaded?.Invoke(p));
+                break;
+
+            case MessageType.MessageEdited:
+                DispatchPayload<MessageEditedPayload>(message, p => MessageEdited?.Invoke(p));
+                break;
+
+            case MessageType.MessageDeleted:
+                DispatchPayload<MessageDeletedPayload>(message, p => MessageDeleted?.Invoke(p));
+                break;
+
+            case MessageType.ChatError:
+                DispatchPayload<ChatErrorPayload>(message, p => ChatErrorReceived?.Invoke(p));
+                break;
         }
     }
 
     /// ضمان تنفيذ الأحداث على خيط واجهة المستخدم الخاص بـ WPF (Dispatcher).
+    // يقرأ الـ Payload بأمان (payload تالف لا يُسقط حلقة القراءة) ثم يستدعي الحدث على خيط الواجهة
+    private static void DispatchPayload<T>(Message message, Action<T> handler) where T : class
+    {
+        var payload = message.ReadPayload<T>();
+        if (payload is null) return;
+        Raise(() => handler(payload));
+    }
+
     private static void Raise(Action action)
     {
         if (Application.Current?.Dispatcher is { } dispatcher && !dispatcher.CheckAccess())
@@ -238,6 +354,7 @@ public class NetworkClient : INetworkClient
     }
 
     private bool _disconnectedRaised;
+    private int _generation;
 
     private void RaiseDisconnected()
     {

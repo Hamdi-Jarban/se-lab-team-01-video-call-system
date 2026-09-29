@@ -12,8 +12,8 @@ using VideoCall.Client.Contracts;
 namespace VideoCall.Client.ViewModels;
 
 /// <summary>
-/// ‰„Ê–Ã «·⁄—÷ (ViewModel) «·„”ƒÊ· ⁄‰ ≈œ«—… «·„ﬂ«·„«  «·Ã„«⁄Ì… Ê—»ÿ «·√⁄÷«¡ «·„ ⁄œœÌ‰.
-/// Ì Ê·Ï  ‰”Ìﬁ œ›ﬁ «·›ÌœÌÊ/«·’Ê  ·⁄œ… „‘«—ﬂÌ‰ »‘ﬂ· „ “«„‰° Ê≈œ«—… ﬁ‰«… ≈—”«· «·ﬂ«„Ì—«° Ê«· ⁄«„· „⁄ «·Œ«œ„ ⁄»— UDP/TCP.
+/// √§√£√¶√ê√å √á√°√ö√ë√ñ (ViewModel) √á√°√£√ì√Ñ√¶√° √ö√§ √Ö√è√á√ë√â √á√°√£√ü√á√°√£√á√ä √á√°√å√£√á√ö√≠√â √¶√ë√à√ò √á√°√É√ö√ñ√á√Å √á√°√£√ä√ö√è√è√≠√§.
+/// √≠√ä√¶√°√¨ √ä√§√ì√≠√û √è√ù√û √á√°√ù√≠√è√≠√¶/√á√°√ï√¶√ä √°√ö√è√â √£√î√á√ë√ü√≠√§ √à√î√ü√° √£√ä√í√á√£√§¬° √¶√Ö√è√á√ë√â √û√§√á√â √Ö√ë√ì√á√° √á√°√ü√á√£√≠√ë√á¬° √¶√á√°√ä√ö√á√£√° √£√ö √á√°√é√á√è√£ √ö√à√ë UDP/TCP.
 /// </summary>
 public sealed class GroupCallViewModel : ViewModelBase, IDisposable
 {
@@ -22,18 +22,18 @@ public sealed class GroupCallViewModel : ViewModelBase, IDisposable
     private readonly string _roomId;
     private readonly Guid _mediaId;
 
-    // ≈·€«¡ ﬂ«›… «·⁄„·Ì«  «·Œ·›Ì… €Ì— «·„ “«„‰… ⁄‰œ ≈€·«ﬁ «·€—›…
+    // √Ö√°√õ√á√Å √ü√á√ù√â √á√°√ö√£√°√≠√á√ä √á√°√é√°√ù√≠√â √õ√≠√ë √á√°√£√ä√í√á√£√§√â √ö√§√è √Ö√õ√°√á√û √á√°√õ√ë√ù√â
     private readonly CancellationTokenSource _stop = new();
 
-    // ﬁ‰«… (Channel) „ÕœÊœ… »”⁄… 2 ≈ÿ«— ·≈—”«· «·›ÌœÌÊ »‘ﬂ· ¬„‰ Ê€Ì— „ “«„‰ œÊ‰ ÕÃ» ŒÌÿ «·«· ﬁ«ÿ°
-    // „⁄ «· Œ·’  ·ﬁ«∆Ì« „‰ «·≈ÿ«—«  «·ﬁœÌ„… ⁄‰œ ÕœÊÀ »ÿ¡ ›Ì «·‘»ﬂ… (DropOldest).
+    // √û√§√á√â (Channel) √£√ç√è√¶√è√â √à√ì√ö√â 2 √Ö√ò√á√ë √°√Ö√ë√ì√á√° √á√°√ù√≠√è√≠√¶ √à√î√ü√° √Ç√£√§ √¶√õ√≠√ë √£√ä√í√á√£√§ √è√¶√§ √ç√å√à √é√≠√ò √á√°√á√°√ä√û√á√ò¬°
+    // √£√ö √á√°√ä√é√°√ï √ä√°√û√á√Ü√≠√á√∞ √£√§ √á√°√Ö√ò√á√ë√á√ä √á√°√û√è√≠√£√â √ö√§√è √ç√è√¶√ã √à√ò√Å √ù√≠ √á√°√î√à√ü√â (DropOldest).
     private readonly Channel<byte[]> _videoQueue = Channel.CreateBounded<byte[]>(
         new BoundedChannelOptions(2) { FullMode = BoundedChannelFullMode.DropOldest });
 
-    // ﬁ«∆„… ﬁ«»·… ··„·«ÕŸ…  Õ ÊÌ ⁄·Ï »Ì«‰«  Ã„Ì⁄ «·„‘«—ﬂÌ‰ «·»⁄ÌœÌ‰ ›Ì «·„ﬂ«·„… ·⁄—÷Â„ ›Ì Ê«ÃÂ… WPF
+    // √û√á√Ü√£√â √û√á√à√°√â √°√°√£√°√á√ç√ô√â √ä√ç√ä√¶√≠ √ö√°√¨ √à√≠√á√§√á√ä √å√£√≠√ö √á√°√£√î√á√ë√ü√≠√§ √á√°√à√ö√≠√è√≠√§ √ù√≠ √á√°√£√ü√á√°√£√â √°√ö√ë√ñ√•√£ √ù√≠ √¶√á√å√•√â WPF
     private readonly ObservableCollection<RemoteParticipantViewModel> _participants = new();
 
-    // ﬁ«„Ê” · Ã„Ì⁄ Õ“„ ›ÌœÌÊ ﬂ· „‘«—ﬂ »⁄Ìœ »‘ﬂ· „” ﬁ· »‰«¡ ⁄·Ï «”„ «·„” Œœ„ «·Œ«’ »Â
+    // √û√á√£√¶√ì √°√ä√å√£√≠√ö √ç√í√£ √ù√≠√è√≠√¶ √ü√° √£√î√á√ë√ü √à√ö√≠√è √à√î√ü√° √£√ì√ä√û√° √à√§√á√Å√∞ √ö√°√¨ √á√ì√£ √á√°√£√ì√ä√é√è√£ √á√°√é√á√ï √à√•
     private readonly Dictionary<string, VideoFrameReassembler> _reassemblers = new(StringComparer.OrdinalIgnoreCase);
     private readonly AudioChunkReassembler _audioReassembler = new();
 
@@ -45,7 +45,7 @@ public sealed class GroupCallViewModel : ViewModelBase, IDisposable
     private BitmapSource? _localVideo;
     private bool _muted;
     private bool _cameraOn = true;
-    private string _statusMessage = "Ã«—Ì  ÂÌ∆… «·„Õ«œÀ…...";
+    private string _statusMessage = "√å√á√ë√≠ √ä√•√≠√Ü√â √á√°√£√ç√á√è√ã√â...";
     private int _closed;
 
     public string RoomId => _roomId;
@@ -73,15 +73,16 @@ public sealed class GroupCallViewModel : ViewModelBase, IDisposable
         _roomId = roomId;
         _mediaId = mediaId;
 
-        // ≈œ—«Ã «·„‘«—ﬂÌ‰ «·„ Ê«ÃœÌ‰ ›Ì «·€—›… »«” À‰«¡ «·„” Œœ„ «·Õ«·Ì
+        // √Ö√è√ë√á√å √á√°√£√î√á√ë√ü√≠√§ √á√°√£√ä√¶√á√å√è√≠√§ √ù√≠ √á√°√õ√ë√ù√â √à√á√ì√ä√ã√§√á√Å √á√°√£√ì√ä√é√è√£ √á√°√ç√á√°√≠
         foreach (var member in members.Distinct(StringComparer.OrdinalIgnoreCase))
         {
             if (!member.Equals(_network.Username, StringComparison.OrdinalIgnoreCase))
                 AddParticipant(member);
         }
 
-        // «·«‘ —«ﬂ ›Ì √Õœ«À  Êﬁ› «·Ê”«∆ÿ Ê«‰ﬁÿ«⁄ «·« ’«·
+        // √á√°√á√î√ä√ë√á√ü √ù√≠ √É√ç√è√á√ã √ä√¶√û√ù √á√°√¶√ì√á√Ü√ò √¶√á√§√û√ò√á√ö √á√°√á√ä√ï√á√°
         _network.RoomMediaStopped += OnRoomMediaStopped;
+        _network.RoomUpdated += OnRoomUpdated;
         _network.Disconnected += OnDisconnected;
         ToggleMuteCommand = new RelayCommand(ToggleMute);
         ToggleCameraCommand = new RelayCommand(ToggleCamera);
@@ -90,17 +91,17 @@ public sealed class GroupCallViewModel : ViewModelBase, IDisposable
     }
 
     /// <summary>
-    ///  ÂÌ∆… Ê»œ¡ „”«— ‰ﬁ· «·Ê”«∆ÿ «·Ã„«⁄Ì… (UDP «·’Ê /«·›ÌœÌÊ° ŒÊ«—“„Ì… AEC° Ê„Â„… ≈—”«· «·›ÌœÌÊ «·Œ·›Ì…).
+    /// √ä√•√≠√Ü√â √¶√à√è√Å √£√ì√á√ë √§√û√° √á√°√¶√ì√á√Ü√ò √á√°√å√£√á√ö√≠√â (UDP √á√°√ï√¶√ä/√á√°√ù√≠√è√≠√¶¬° √é√¶√á√ë√í√£√≠√â AEC¬° √¶√£√•√£√â √Ö√ë√ì√á√° √á√°√ù√≠√è√≠√¶ √á√°√é√°√ù√≠√â).
     /// </summary>
     private void StartMediaPipeline()
     {
         if (_network.SessionToken is not { } token || string.IsNullOrWhiteSpace(_network.Username))
         {
-            StatusMessage = "Ã·”… «·„” Œœ„ €Ì— ’«·Õ….";
+            StatusMessage = "√å√°√ì√â √á√°√£√ì√ä√é√è√£ √õ√≠√ë √ï√á√°√ç√â.";
             return;
         }
 
-        // 1. ≈⁄œ«œ ⁄„Ì· UDP ·„⁄«·Ã… Ê«” ﬁ»«· Õ“„ «·’Ê  Ê«·›ÌœÌÊ
+        // 1. √Ö√ö√è√á√è √ö√£√≠√° UDP √°√£√ö√á√°√å√â √¶√á√ì√ä√û√à√á√° √ç√í√£ √á√°√ï√¶√ä √¶√á√°√ù√≠√è√≠√¶
         _udp = new UdpMediaClient(_serverHost, token, _mediaId, _network.Username);
         _udp.AudioPacketReceived += packet =>
         {
@@ -109,35 +110,35 @@ public sealed class GroupCallViewModel : ViewModelBase, IDisposable
                 _audioPlayback?.Enqueue(complete);
         };
         _udp.VideoPacketReceived += OnRemoteVideo;
-        _udp.TransportError += ex => RunOnUi(() => StatusMessage = $"Œÿ√ UDP: {ex.Message}");
+        _udp.TransportError += ex => RunOnUi(() => StatusMessage = $"√é√ò√É UDP: {ex.Message}");
         _udp.Start();
 
-        // 2.  ÂÌ∆… Œœ„«  «·’Ê  Ê „—Ì— „—Ã⁄ ≈·€«¡ «·’œÏ «·’Ê Ì (AEC)
+        // 2. √ä√•√≠√Ü√â √é√è√£√á√ä √á√°√ï√¶√ä √¶√ä√£√ë√≠√ë √£√ë√å√ö √Ö√°√õ√á√Å √á√°√ï√è√¨ √á√°√ï√¶√ä√≠ (AEC)
         _audioPlayback = new AudioPlaybackService();
-        //  „—Ì— «·„—Ã⁄ «·’Ê Ì ·· ‘€Ì· ≈·Ï Œœ„… «· ﬁ«ÿ «·„«Ìﬂ—Ê›Ê‰ ·Œ’„ ’Ê  «·”„«⁄«  Ê„‰⁄ «·’œÏ.
+        // √ä√£√ë√≠√ë √á√°√£√ë√å√ö √á√°√ï√¶√ä√≠ √°√°√ä√î√õ√≠√° √Ö√°√¨ √é√è√£√â √á√°√ä√û√á√ò √á√°√£√á√≠√ü√ë√¶√ù√¶√§ √°√é√ï√£ √ï√¶√ä √á√°√ì√£√á√ö√á√ä √¶√£√§√ö √á√°√ï√è√¨.
         _audioCapture = new AudioCaptureService(_audioPlayback.EchoReference);
         _audioCapture.ChunkCaptured += chunk => _ = _udp.SendAudioAsync(chunk);
         _audioCapture.Start();
 
-        // 3.  ÂÌ∆… Œœ„… «·ﬂ«„Ì—« ÊÕ·ﬁ… ≈—”«· «·›ÌœÌÊ €Ì— «·„ “«„‰…
+        // 3. √ä√•√≠√Ü√â √é√è√£√â √á√°√ü√á√£√≠√ë√á √¶√ç√°√û√â √Ö√ë√ì√á√° √á√°√ù√≠√è√≠√¶ √õ√≠√ë √á√°√£√ä√í√á√£√§√â
         try
         {
             _videoCapture = new VideoCaptureService();
             _videoCapture.FrameCaptured += OnLocalFrame;
             _videoCapture.Start();
             _videoSender = SendVideoLoopAsync(_stop.Token);
-            StatusMessage = "«·„Õ«œÀ… «·Ã„«⁄Ì… „ ’·….";
+            StatusMessage = "√á√°√£√ç√á√è√ã√â √á√°√å√£√á√ö√≠√â √£√ä√ï√°√â.";
         }
         catch (InvalidOperationException)
         {
             IsCameraOn = false;
-            StatusMessage = "«·’Ê  „ ’·° ·ﬂ‰ «·ﬂ«„Ì—« €Ì— „ «Õ….";
+            StatusMessage = "√á√°√ï√¶√ä √£√ä√ï√°¬° √°√ü√§ √á√°√ü√á√£√≠√ë√á √õ√≠√ë √£√ä√á√ç√â.";
         }
     }
 
     private void OnLocalFrame(byte[] encodedFrame, byte[] preview)
     {
-        // ≈÷«›… «·≈ÿ«— «·„‘›— ≈·Ï ﬁ‰«… «·≈—”«·
+        // √Ö√ñ√á√ù√â √á√°√Ö√ò√á√ë √á√°√£√î√ù√ë √Ö√°√¨ √û√§√á√â √á√°√Ö√ë√ì√á√°
         _videoQueue.Writer.TryWrite(encodedFrame);
         RunOnUi(() =>
         {
@@ -148,7 +149,7 @@ public sealed class GroupCallViewModel : ViewModelBase, IDisposable
     }
 
     /// <summary>
-    /// Õ·ﬁ… Œ·›Ì… „” „—…  ﬁ—√ ≈ÿ«—«  «·›ÌœÌÊ „‰ «·ﬁ‰«… Ê „——Â« ·⁄„Ì· UDP ·≈—”«·Â«.
+    /// √ç√°√û√â √é√°√ù√≠√â √£√ì√ä√£√ë√â √ä√û√ë√É √Ö√ò√á√ë√á√ä √á√°√ù√≠√è√≠√¶ √£√§ √á√°√û√§√á√â √¶√ä√£√ë√ë√•√á √°√ö√£√≠√° UDP √°√Ö√ë√ì√á√°√•√á.
     /// </summary>
     private async Task SendVideoLoopAsync(CancellationToken ct)
     {
@@ -164,7 +165,7 @@ public sealed class GroupCallViewModel : ViewModelBase, IDisposable
     }
 
     /// <summary>
-    /// «” ﬁ»«· ≈ÿ«—«  «·›ÌœÌÊ „‰ «·„‘«—ﬂÌ‰ «·¬Œ—Ì‰ Ê Ã„ÌœÂ« Ê⁄—÷Â« »‰«¡ ⁄·Ï «”„ ﬂ· „—”·.
+    /// √á√ì√ä√û√à√á√° √Ö√ò√á√ë√á√ä √á√°√ù√≠√è√≠√¶ √£√§ √á√°√£√î√á√ë√ü√≠√§ √á√°√Ç√é√ë√≠√§ √¶√ä√å√£√≠√è√•√á √¶√ö√ë√ñ√•√á √à√§√á√Å√∞ √ö√°√¨ √á√ì√£ √ü√° √£√ë√ì√°.
     /// </summary>
     private void OnRemoteVideo(MediaPacket packet)
     {
@@ -190,7 +191,7 @@ public sealed class GroupCallViewModel : ViewModelBase, IDisposable
     }
 
     /// <summary>
-    /// ≈œ—«Ã „‘«—ﬂ ÃœÌœ ›Ì «·ﬁ«∆„… «·ﬁ«»·… ··„·«ÕŸ… ≈–« ·„ Ìﬂ‰ „ÊÃÊœ« „‰ ﬁ»·.
+    /// √Ö√è√ë√á√å √£√î√á√ë√ü √å√è√≠√è √ù√≠ √á√°√û√á√Ü√£√â √á√°√û√á√à√°√â √°√°√£√°√á√ç√ô√â √Ö√ê√á √°√£ √≠√ü√§ √£√¶√å√¶√è√á√∞ √£√§ √û√à√°.
     /// </summary>
     private RemoteParticipantViewModel AddParticipant(string username)
     {
@@ -218,19 +219,51 @@ public sealed class GroupCallViewModel : ViewModelBase, IDisposable
             LocalVideo = null;
     }
 
+    private void OnRoomUpdated(RoomUpdatePayload payload)
+    {
+        if (!payload.RoomId.Equals(_roomId, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        RunOnUi(() =>
+        {
+            var activeMembers = payload.Members
+                .Where(member => !member.Equals(_network.Username, StringComparison.OrdinalIgnoreCase))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var removed = _participants
+                .Where(participant => !activeMembers.Contains(participant.Username))
+                .Select(participant => participant.Username)
+                .ToList();
+
+            foreach (var username in removed)
+            {
+                var participant = _participants.FirstOrDefault(x =>
+                    x.Username.Equals(username, StringComparison.OrdinalIgnoreCase));
+                if (participant is not null)
+                    _participants.Remove(participant);
+                _reassemblers.Remove(username);
+            }
+
+            if (removed.Count > 0)
+                StatusMessage = removed.Count == 1
+                    ? $"ÿ∫ÿßÿØÿ± {removed[0]} ÿßŸÑŸÖÿ¨ŸÖŸàÿπÿ©."
+                    : $"ÿ∫ÿßÿØÿ± {string.Join(" Ÿà", removed)} ÿßŸÑŸÖÿ¨ŸÖŸàÿπÿ©.";
+        });
+    }
+
     private void OnRoomMediaStopped(RoomMediaPayload payload)
     {
         if (!payload.RoomId.Equals(_roomId, StringComparison.OrdinalIgnoreCase))
             return;
-        RunOnUi(() => _ = CloseAsync(" „ ≈Ìﬁ«› «·„Õ«œÀ… „‰ «·„÷Ì›."));
+        RunOnUi(() => _ = CloseAsync("√ä√£ √Ö√≠√û√á√ù √á√°√£√ç√á√è√ã√â √£√§ √á√°√£√ñ√≠√ù."));
     }
 
-    private void OnDisconnected() => RunOnUi(() => _ = CloseAsync("«‰ﬁÿ⁄ «·« ’«· »«·Œ«œ„."));
+    private void OnDisconnected() => RunOnUi(() => _ = CloseAsync("√á√§√û√ò√ö √á√°√á√ä√ï√á√° √à√á√°√é√á√è√£."));
 
-    private async Task LeaveAsync() => await CloseAsync(" „  „€«œ—… «·„Õ«œÀ….");
+    private async Task LeaveAsync() => await CloseAsync("√ä√£√ä √£√õ√á√è√ë√â √á√°√£√ç√á√è√ã√â.");
 
     /// <summary>
-    /// «· Œ·Ì ⁄‰ «·„Ê«—œ° ≈Ìﬁ«› «·ﬁ‰Ê« ° Ê«· ‰ŸÌ› «·‘«„· ·Ã„Ì⁄ «·„ﬂÊ‰«  ⁄‰œ «·Œ—ÊÃ „‰ «·„ﬂ«·„… «·Ã„«⁄Ì….
+    /// √á√°√ä√é√°√≠ √ö√§ √á√°√£√¶√á√ë√è¬° √Ö√≠√û√á√ù √á√°√û√§√¶√á√ä¬° √¶√á√°√ä√§√ô√≠√ù √á√°√î√á√£√° √°√å√£√≠√ö √á√°√£√ü√¶√§√á√ä √ö√§√è √á√°√é√ë√¶√å √£√§ √á√°√£√ü√á√°√£√â √á√°√å√£√á√ö√≠√â.
     /// </summary>
     private async Task CloseAsync(string message)
     {
@@ -240,7 +273,7 @@ public sealed class GroupCallViewModel : ViewModelBase, IDisposable
         _stop.Cancel();
         _videoQueue.Writer.TryComplete();
 
-        // ≈Ìﬁ«› Ã„Ì⁄ «·„‰ ÃÌ‰ √Ê·« ﬁ»· «‰ Ÿ«— «ﬂ „«· ⁄„·Ì«  «·≈—”«· «·„⁄·ﬁ…
+        // √Ö√≠√û√á√ù √å√£√≠√ö √á√°√£√§√ä√å√≠√§ √É√¶√°√á√∞ √û√à√° √á√§√ä√ô√á√ë √á√ü√ä√£√á√° √ö√£√°√≠√á√ä √á√°√Ö√ë√ì√á√° √á√°√£√ö√°√û√â
         _videoCapture?.Dispose();
         _audioCapture?.Dispose();
         if (_videoSender is not null)
@@ -258,15 +291,16 @@ public sealed class GroupCallViewModel : ViewModelBase, IDisposable
         _udp?.Dispose();
 
         _network.RoomMediaStopped -= OnRoomMediaStopped;
+        _network.RoomUpdated -= OnRoomUpdated;
         _network.Disconnected -= OnDisconnected;
         Closed?.Invoke();
     }
 
-    // ¬„‰ ··«” œ⁄«¡ «·Õ«’—: ﬂ· ŒÿÊ… „‰ Ÿ—… √⁄·«Â  ” Œœ„ ConfigureAwait(false)°
-    // Ê»«· «·Ì ·«  Õ «Ã ·«” ∆‰«› «·ŒÌÿ ⁄·Ï ŒÌÿ «·Ê«ÃÂ… (UI)° „„« Ì„‰⁄ ÕœÊÀ «·Ã„Êœ (Deadlock) ›Ì WPF.
-    public void Dispose() => CloseAsync(" „ ≈€·«ﬁ ‰«›–… «·„Õ«œÀ….").GetAwaiter().GetResult();
+    // √Ç√£√§ √°√°√á√ì√ä√è√ö√á√Å √á√°√ç√á√ï√ë: √ü√° √é√ò√¶√â √£√§√ä√ô√ë√â √É√ö√°√á√• √ä√ì√ä√é√è√£ ConfigureAwait(false)¬°
+    // √¶√à√á√°√ä√á√°√≠ √°√á √ä√ç√ä√á√å √°√á√ì√ä√Ü√§√á√ù √á√°√é√≠√ò √ö√°√¨ √é√≠√ò √á√°√¶√á√å√•√â (UI)¬° √£√£√á √≠√£√§√ö √ç√è√¶√ã √á√°√å√£√¶√è (Deadlock) √ù√≠ WPF.
+    public void Dispose() => CloseAsync("√ä√£ √Ö√õ√°√á√û √§√á√ù√ê√â √á√°√£√ç√á√è√ã√â.").GetAwaiter().GetResult();
 
-    public Task DisposeAsync() => CloseAsync(" „ ≈€·«ﬁ ‰«›–… «·„Õ«œÀ….");
+    public Task DisposeAsync() => CloseAsync("√ä√£ √Ö√õ√°√á√û √§√á√ù√ê√â √á√°√£√ç√á√è√ã√â.");
 
     private static void RunOnUi(Action action)
     {

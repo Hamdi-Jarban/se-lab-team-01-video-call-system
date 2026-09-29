@@ -31,6 +31,17 @@ public partial class LoginWindow : Window
         PasswordBox.Clear();
     }
 
+    // فتح نافذة إنشاء حساب؛ عند النجاح يُعبَّأ اسم المستخدم تلقائيًا في نموذج الدخول
+    private void Register_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new RegisterWindow(_network, _viewModel.ServerAddress) { Owner = this };
+        if (dialog.ShowDialog() == true && !string.IsNullOrWhiteSpace(dialog.RegisteredUsername))
+        {
+            _viewModel.Username = dialog.RegisteredUsername;
+            PasswordBox.Focus();
+        }
+    }
+
     private void OnLoginSucceeded()
     {
         var main = new MainWindow(_network);

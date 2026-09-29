@@ -1,32 +1,32 @@
 namespace VideoCall.Server.Api.Dtos;
 
 /// <summary>
-/// Ù†Ù…Ø§Ø°Ø¬ Ø§Ù„Ø§Ø³ØªØ¬Ø§Ø¨Ø© Ø§Ù„Ø®Ø§ØµØ© Ø¨ÙˆØ§Ø¬Ù‡Ø© HTTP Ù„Ù„Ù‚Ø±Ø§Ø¡Ø© ÙÙ‚Ø·.
-/// ØªØ³ØªØ®Ø¯Ù… Ù„ØªØ­ÙˆÙŠÙ„ Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø®Ø§Ø¯Ù… Ø¥Ù„Ù‰ JSON Ù…Ø¹ ÙØµÙ„Ù‡Ø§ Ø¹Ù† Ù†Ù…Ø§Ø°Ø¬ Domain ÙˆØ¨Ø±ÙˆØªÙˆÙƒÙˆÙ„ TCP.
+/// äãÇĞÌ ÇáÇÓÊÌÇÈÉ ÇáÎÇÕÉ ÈæÇÌåÉ HTTP ááŞÑÇÁÉ İŞØ.
+/// ÊÓÊÎÏã áÊÍæíá ÈíÇäÇÊ ÇáÎÇÏã Åáì JSON ãÚ İÕáåÇ Úä äãÇĞÌ Domain æÈÑæÊæßæá TCP.
 /// </summary>
 public sealed record ServerStatusResponse(string Status, int ConnectedClients, string Uptime);
 
 /// <summary>
-/// ÙŠØ¹Ø±Ø¶ Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…ÙŠÙ† Ø§Ù„Ù…ØªØµÙ„ÙŠÙ† ÙˆØ¹Ø¯Ø¯Ù‡Ù….
+/// íÚÑÖ ŞÇÆãÉ ÇáãÓÊÎÏãíä ÇáãÊÕáíä æÚÏÏåã.
 /// </summary>
 public sealed record OnlineUsersResponse(IReadOnlyList<string> OnlineUsers, int Count);
 
 /// <summary>
-/// ÙŠÙ…Ø«Ù„ Ù…Ù„Ø®Øµ ØºØ±ÙØ© ÙˆØ£Ø¹Ø¶Ø§Ø¡Ù‡Ø§.
+/// íãËá ãáÎÕ ÛÑİÉ æÃÚÖÇÁåÇ.
 /// </summary>
 public sealed record RoomSummary(string Name, IReadOnlyList<string> Members);
 
 /// <summary>
-/// ÙŠÙ…Ø«Ù„ Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„ØºØ±Ù Ø§Ù„Ø­Ø§Ù„ÙŠØ©.
+/// íãËá ŞÇÆãÉ ÇáÛÑİ ÇáÍÇáíÉ.
 /// </summary>
 public sealed record RoomsResponse(IReadOnlyList<RoomSummary> Rooms);
 
 /// <summary>
-/// ÙŠÙ…Ø«Ù„ Ø¬Ù„Ø³Ø© ÙˆØ³Ø§Ø¦Ø· Ù†Ø´Ø·Ø© ÙˆØ§Ù„Ù…Ø³ØªØ®Ø¯Ù…ÙŠÙ† Ø§Ù„Ù…Ø´Ø§Ø±ÙƒÙŠÙ† ÙÙŠÙ‡Ø§.
+/// íãËá ÌáÓÉ æÓÇÆØ äÔØÉ æÇáãÓÊÎÏãíä ÇáãÔÇÑßíä İíåÇ.
 /// </summary>
 public sealed record ActiveSessionSummary(string SessionId, IReadOnlyList<string> Participants);
 
 /// <summary>
-/// ÙŠÙ…Ø«Ù„ Ù‚Ø§Ø¦Ù…Ø© Ø¬Ù„Ø³Ø§Øª Ø§Ù„ÙˆØ³Ø§Ø¦Ø· Ø§Ù„Ù†Ø´Ø·Ø©.
+/// íãËá ŞÇÆãÉ ÌáÓÇÊ ÇáæÓÇÆØ ÇáäÔØÉ.
 /// </summary>
 public sealed record SessionsResponse(IReadOnlyList<ActiveSessionSummary> ActiveCalls);

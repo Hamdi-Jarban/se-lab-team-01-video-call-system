@@ -11,6 +11,8 @@ public partial class MainWindow : Window
 {
     private readonly INetworkClient _network;
     private readonly MainViewModel _viewModel;
+    private readonly ChatViewModel _chatViewModel;
+    private ChatWindow? _chatWindow;
     private CallWindow? _activeCallWindow;
     private IncomingCallWindow? _incomingCallWindow;
 
@@ -19,6 +21,11 @@ public partial class MainWindow : Window
         InitializeComponent();
         _network = network;
         _viewModel = new MainViewModel(network);
+
+        // ChatViewModel يملكه MainWindow: يبقى يستقبل الرسائل ويُحمّل المحادثات من SQL فور الدخول
+        _chatViewModel = new ChatViewModel(network, _viewModel.OnlineUsers);
+        _chatViewModel.MessageArrived += OnChatMessageArrived;
+        _chatViewModel.CallRequested += OnCallRequested;
         _viewModel.PrivateCallRequested += OnCallRequested;
         _viewModel.IncomingCall += OnIncomingCallReceived;
         _network.RoomInviteReceived += OnRoomInviteReceived;
@@ -91,7 +98,7 @@ public partial class MainWindow : Window
             await Task.Delay(150);
             if (dialog.DialogResult is not false)
             {
-                var roomWindow = new RoomWindow(_network) { Owner = this };
+                var roomWindow = new RoomWindow(_network, _viewModel.OnlineUsers) { Owner = this };
                 roomWindow.Show();
                 await _network.JoinRoomAsync(invite.RoomId);
             }
@@ -102,6 +109,10 @@ public partial class MainWindow : Window
     private void MainWindow_Closed(object? sender, EventArgs e)
     {
         _network.RoomInviteReceived -= OnRoomInviteReceived;
+        _chatViewModel.MessageArrived -= OnChatMessageArrived;
+        _chatViewModel.CallRequested -= OnCallRequested;
+        _chatViewModel.Dispose();
+        _chatWindow?.Close();
         _viewModel.Dispose();
         _incomingCallWindow?.Close();
         _activeCallWindow?.Close();
@@ -118,23 +129,57 @@ public partial class MainWindow : Window
 
     private void RoomsButton_Click(object sender, RoutedEventArgs e)
     {
-        var roomWindow = new RoomWindow(_network) { Owner = this };
+        var roomWindow = new RoomWindow(_network, _viewModel.OnlineUsers) { Owner = this };
         roomWindow.Show();
     }
 
     private void Rooms_Click(object sender, RoutedEventArgs e) => RoomsButton_Click(sender, e);
+
+    private void ShowChatWindow()
+    {
+        if (_chatWindow is null)
+        {
+            _chatWindow = new ChatWindow(_chatViewModel) { Owner = this };
+            _chatWindow.Closed += (_, _) => _chatWindow = null;
+            _chatWindow.Show();
+        }
+        else
+        {
+            if (_chatWindow.WindowState == WindowState.Minimized) _chatWindow.WindowState = WindowState.Normal;
+            _chatWindow.Activate();
+        }
+    }
+
+    private void Chats_Click(object sender, RoutedEventArgs e) => ShowChatWindow();
+
+    private async void Message_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string target }) return;
+        ShowChatWindow();
+        await _chatViewModel.OpenPrivateChatWithAsync(target);
+    }
+
+    private void OnChatMessageArrived(string sender, string conversationName)
+    {
+        // إشعار بسيط إذا كانت نافذة المحادثات غير نشطة
+        if (_chatWindow is null || !_chatWindow.IsActive)
+            _viewModel.Status = $"رسالة جديدة من {sender} في {conversationName}";
+    }
 
     private void Call_Click(object sender, RoutedEventArgs e)
     {
         if (sender is Button { Tag: string target }) OnCallRequested(target);
     }
 
-    private void LogoutButton_Click(object sender, RoutedEventArgs e)
+    private async void LogoutButton_Click(object sender, RoutedEventArgs e)
     {
-        Close();
+        // يُنهي الجلسة على الخادم (UserSessions.IsActive = 0) ويغلق اتصال TCP فعليًا، ثم تظهر شاشة الدخول
+        await _network.LogoutAsync();
+
         var login = new LoginWindow(_network);
         Application.Current.MainWindow = login;
         login.Show();
+        Close();
     }
 
     private void Logout_Click(object sender, RoutedEventArgs e) => LogoutButton_Click(sender, e);

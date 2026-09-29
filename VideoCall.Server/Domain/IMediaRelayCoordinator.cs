@@ -1,20 +1,20 @@
 namespace VideoCall.Server.Domain;
 
 /// <summary>
-/// ┘К┘И┘Б┘С╪▒ ╪з┘Д╪╣┘Е┘Д┘К╪з╪к ╪з┘Д┘Д╪з╪▓┘Е╪й ┘Д╪е╪п╪з╪▒╪й ┘Ж┘В╪з╪╖ ╪з╪к╪╡╪з┘Д UDP ╪з┘Д┘Е╪▒╪к╪и╪╖╪й ╪и╪з┘Д┘Е╪н╪з╪п╪л╪з╪к.
+/// эц▌°╤ ╟с┌усэ╟╩ ╟сс╟╥у╔ с┼╧╟╤╔ ф▐╟╪ ╟╩╒╟с UDP ╟су╤╩╚╪╔ ╚╟су═╟╧╦╟╩.
 /// </summary>
 public interface IMediaRelayCoordinator
 {
     /// <summary>
-    /// ┘К╪н╪░┘Б ┘Ж┘В╪╖╪й ╪з╪к╪╡╪з┘Д ┘Е╪│╪к╪о╪п┘Е ┘Е┘Ж ┘Е╪н╪з╪п╪л╪й ┘Е╪н╪п╪п╪й.
+    /// э═╨▌ ф▐╪╔ ╟╩╒╟с у╙╩╬╧у уф у═╟╧╦╔ у═╧╧╔.
     /// </summary>
-    /// <param name="conversationId">┘Е╪╣╪▒┘Б ╪з┘Д┘Е╪н╪з╪п╪л╪й.</param>
-    /// <param name="username">╪з╪│┘Е ╪з┘Д┘Е╪│╪к╪о╪п┘Е.</param>
+    /// <param name="conversationId">у┌╤▌ ╟су═╟╧╦╔.</param>
+    /// <param name="username">╟╙у ╟су╙╩╬╧у.</param>
     void RemoveEndpoint(string conversationId, string username);
 
     /// <summary>
-    /// ┘К╪н╪░┘Б ╪м┘Е┘К╪╣ ┘Ж┘В╪з╪╖ ╪з┘Д╪з╪к╪╡╪з┘Д ╪з┘Д┘Е╪▒╪к╪и╪╖╪й ╪и╪з┘Д┘Е╪н╪з╪п╪л╪й.
+    /// э═╨▌ ╠уэ┌ ф▐╟╪ ╟с╟╩╒╟с ╟су╤╩╚╪╔ ╚╟су═╟╧╦╔.
     /// </summary>
-    /// <param name="conversationId">┘Е╪╣╪▒┘Б ╪з┘Д┘Е╪н╪з╪п╪л╪й.</param>
+    /// <param name="conversationId">у┌╤▌ ╟су═╟╧╦╔.</param>
     void ForgetConversation(string conversationId);
 }

@@ -6,130 +6,110 @@ using VideoCall.Server.Application;
 using VideoCall.Server.Domain;
 using VideoCall.Server.Domain.Logging;
 using VideoCall.Server.Domain.Repositories;
+using VideoCall.Server.Domain.Services;
+using VideoCall.Server.Infrastructure.Persistence;
+using VideoCall.Server.Persistence;
+using Microsoft.Extensions.Configuration;
 using VideoCall.Server.Infrastructure.Logging;
 using VideoCall.Server.Infrastructure.Media;
 using VideoCall.Server.Infrastructure.Security;
 using VideoCall.Shared.Networking;
 
-// ============================================================================
-// ููุทุฉ ุชุฑููุจ ุงูุชุทุจูู (Composition Root)
-// ============================================================================
-//
-// ูุฐุง ุงูู…ูู ูู ุงูู…ูุงู ุงูู…ุฑูุฒู ุงูุฐู ุชูุฑุจุท ููู ุงููุงุฌูุงุช (Interfaces)
-// ุจุงูุชูููุฐุงุช ุงููุนููุฉ ุฏุงุฎู ุงูุชุทุจูู.
-//
-// ุงูุชุฒู…ูุง ููุง ุจู…ุจุฏุฃ ุนูุณ ุงุชุฌุงู ุงูุงุนุชู…ุงุฏ (Dependency Inversion Principle)ุ
-// ุจุญูุซ ุชุนุชู…ุฏ ุทุจูุงุช ุงูุชุทุจูู ุนูู ุงููุงุฌูุงุช ุจุฏู ุงูุงุนุชู…ุงุฏ ุงูู…ุจุงุดุฑ ุนูู ุงูุชูุงุตูู
-// ุงูุชูููุฐูุฉ ู…ุซู TCP ูUDP ูConsole ูุทุฑู ุชุฎุฒูู ุงูุจูุงูุงุช.
-//
-// ููุงุฆุฏ ูุฐุง ุงูุฃุณููุจ:
-// - ุชุณููู ุงุณุชุจุฏุงู ุฃู ู…ููู‘ู ุฏูู ุชุนุฏูู ุงูุทุจูุงุช ุงูุชู ุชุณุชุฎุฏู…ู.
-// - ุชุญุณูู ูุงุจููุฉ ุงุฎุชุจุงุฑ ุงูุฎุฏู…ุงุช ุจุงุณุชุฎุฏุงู… ุจุฏุงุฆู ููู…ูุฉ (Mocks/Fakes).
-// - ุฅุจูุงุก ู…ุณุคูููุฉ ุฅูุดุงุก ุงููุงุฆูุงุช ูู ู…ูุงู ูุงุญุฏ.
-// - ู…ูุน ุงูุชุดุงุฑ ุนู…ููุงุช new ุฏุงุฎู ุทุจูุงุช ุงูุชุทุจูู ูุงูุฃุนู…ุงู.
-//
-// ูุชู… ุงุณุชุฎุฏุงู… Microsoft.Extensions.DependencyInjection ูุฅุฏุงุฑุฉ ุฏูุฑุฉ ุญูุงุฉ
-// ุงูุฎุฏู…ุงุช ูุญูู ุงูุงุนุชู…ุงุฏูุงุช ุนุจุฑ Constructors.
-// ============================================================================
-
-// ู…ููุฐ ูุงุฌูุฉ HTTP ุงูุฎุงุตุฉ ุจู…ุฑุงูุจุฉ ุญุงูุฉ ุงูุฎุงุฏู….
-// ู…ูุงุญุธุฉ: ูุฌุจ ููู ุงูุฅุนุฏุงุฏุงุช ุฅูู Configuration ุฃู Environment Variables
-// ุนูุฏ ุชุดุบูู ุงูุชุทุจูู ูู ุจูุฆุฉ ุงูุฅูุชุงุฌ.
 const int HttpApiPort = 8080;
 
-// ---------------------------------------------------------------------------
-// ุญุณุงุจุงุช ุงูุชุทููุฑ
-// ---------------------------------------------------------------------------
-//
-// ูุฐู ุงูุญุณุงุจุงุช ู…ุฎุตุตุฉ ููุชุทููุฑ ูุงูุงุฎุชุจุงุฑ ุงูู…ุญูู ููุท.
-// ูุง ููุณู…ุญ ุจุงุณุชุฎุฏุงู… ููู…ุงุช ู…ุฑูุฑ ูุตูุฉ ุซุงุจุชุฉ ูู ุจูุฆุฉ ุงูุฅูุชุงุฌ.
-//
-// ูู ุจูุฆุฉ ุงูุฅูุชุงุฌ ูุฌุจ ุงุณุชุจุฏุงู ูุฐุง ุงููุงู…ูุณ ุจู…ุตุฏุฑ ุขู…ูุ ู…ุซู:
-// - ูุงุนุฏุฉ ุจูุงูุงุช ุชุญุชูู ุนูู Password Hashes.
-// - ู…ุฒูุฏ ูููุฉ ู…ุฑูุฒู (Identity Provider).
-// - Secret Manager ุฃู ุฎุฏู…ุฉ ุฃุณุฑุงุฑ ู…ุคุณุณูุฉ.
-// ---------------------------------------------------------------------------
-var accounts = new Dictionary<string, string>(
-    StringComparer.OrdinalIgnoreCase)
-{
-    ["hamdi"] = "1234",
-    ["ali1"] = "1111",
-    ["ali2"] = "2222",
-    ["ali3"] = "3333"
-};
 
-// ุฅูุดุงุก ุญุงููุฉ ุงูุงุนุชู…ุงุฏูุงุช ุงูุฎุงุตุฉ ุจุงูุชุทุจูู.
+var configuration = new ConfigurationBuilder().SetBasePath(AppContext.BaseDirectory)
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
+    .AddEnvironmentVariables()
+    .Build();
+
+var databaseOptions = new DatabaseOptions(
+    configuration.GetConnectionString(DatabaseOptions.ConnectionStringName) ?? string.Empty);
+
+// ลไิวม อวๆํษ วแวฺสใวฯํวส วแฮวีษ ศวแสุศํÞ.
 var services = new ServiceCollection();
 
 // ---------------------------------------------------------------------------
-// ุชุณุฌูู ุงูุฎุฏู…ุงุช ุงูู…ุดุชุฑูุฉ
+// สำฬํแ วแฮฯใวส วแใิสั฿ษ
 // ---------------------------------------------------------------------------
 
-// ุฎุฏู…ุฉ ุชุณุฌูู ุงูุฃุญุฏุงุซ ูุงูุฃุฎุทุงุก.
-// ูุชู… ุชุณุฌูููุง ูู€ Singleton ุญุชู ุชุณุชุฎุฏู… ุฌู…ูุน ู…ูููุงุช ุงูุฎุงุฏู… ููุณ instance.
+// ฮฯใษ สำฬํแ วแรอฯวห ๆวแรฮุวม.
+// ํสใ สำฬํแๅว ฿Ü Singleton อส์ สำสฮฯใ ฬใํฺ ใ฿ๆไวส วแฮวฯใ ไÝำ instance.
 services.AddSingleton<IAppLogger, ConsoleAppLogger>();
 
-// ุฎุฏู…ุฉ ุงูุชุญูู ู…ู ุจูุงูุงุช ุชุณุฌูู ุงูุฏุฎูู.
-// ุงูุชูููุฐ ุงูุญุงูู ู…ุฎุตุต ููุชุทููุฑ ููุนุชู…ุฏ ุนูู ุงูุญุณุงุจุงุช ุงูู…ูุฌูุฏุฉ ูู ุงูุฐุงูุฑุฉ.
-services.AddSingleton<ICredentialValidator>(
-    _ => new DevelopmentCredentialValidator(accounts));
+services.AddSingleton(databaseOptions);
+services.AddSingleton<ISqlConnectionFactory, SqlConnectionFactory>();
+services.AddSingleton<DatabaseInitializer>();
+services.AddSingleton<IUserRepository, SqlUserRepository>();
+services.AddSingleton<IUserSessionRepository, SqlUserSessionRepository>();
+services.AddSingleton<IChatConversationRepository, SqlChatConversationRepository>();
+services.AddSingleton<IMessageRepository, SqlMessageRepository>();
+services.AddSingleton<ICallRepository, SqlCallRepository>();
 
-// ู…ุณุชูุฏุน ุงูุญุถูุฑ (Presence Repository).
-// ูุญุชูุธ ุจุงูู…ุณุชุฎุฏู…ูู ุงูู…ุชุตููู ููุฑุจุท ูู ู…ุณุชุฎุฏู… ุจุฌูุณุฉ TCP ุงูุฎุงุตุฉ ุจู.
+// ---------- ุงูุฎุฏู…ุงุช ----------
+services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
+services.AddSingleton<LoginThrottle>();
+services.AddSingleton<IAuthService, AuthService>();
+services.AddSingleton<IChatService, ChatService>();
+services.AddSingleton<ICallHistoryRecorder, CallHistoryRecorder>();
+services.AddSingleton<ChatProtocolHandler>();
+
+// ใำสๆฯฺ วแอึๆั (Presence Repository).
+// ํอสÝู ศวแใำสฮฯใํไ วแใสีแํไ ๆํัศุ ฿แ ใำสฮฯใ ศฬแำษ TCP วแฮวีษ ศๅ.
 services.AddSingleton<IUserPresenceRepository, UserPresenceService>();
 
-// ู…ุณุชูุฏุน ุงูู…ุญุงุฏุซุงุช ูุงูุบุฑู.
-// ุงูุชูููุฐ ุงูุญุงูู ูุนู…ู ุฏุงุฎู ุงูุฐุงูุฑุฉ ููุญุฏุฏ ุงูุญุฏ ุงูุฃูุตู ูุฃุนุถุงุก ุงูุบุฑูุฉ ุจู€ 8.
-// ูู…ูู ุงุณุชุจุฏุงูู ูุงุญููุง ุจุชูููุฐ ูุนุชู…ุฏ ุนูู ูุงุนุฏุฉ ุจูุงูุงุช ุฏูู ุชุนุฏูู ุงูู…ุณุชููููู.
+// ใำสๆฯฺ วแใอวฯหวส ๆวแÛัÝ.
+// วแสไÝํะ วแอวแํ ํฺใแ ฯวฮแ วแะว฿ัษ ๆํอฯฯ วแอฯ วแรÞี์ แรฺึวม วแÛัÝษ ศÜ 8.
+// ํใ฿ไ วำสศฯวแๅ แวอÞ๐ว ศสไÝํะ ํฺสใฯ ฺแ์ Þวฺฯษ ศํวไวส ฯๆไ สฺฯํแ วแใำสๅแ฿ํไ.
 services.AddSingleton<IConversationRepository>(
     _ => new ConversationService(maxGroupMembers: 8));
 
 // ---------------------------------------------------------------------------
-// ุฎุฏู…ุฉ ุชู…ุฑูุฑ ุงููุณุงุฆุท ุนุจุฑ UDP
+// ฮฯใษ สใัํั วแๆำวฦุ ฺศั UDP
 // ---------------------------------------------------------------------------
 
-// ุชุณุฌูู ุฎุฏู…ุฉ UDP ูููุน ู…ูู…ูุณ ูุฃู ServerHost ู…ุณุคูู ุนู ุฏูุฑุฉ ุญูุงุชูุง
-// ูุฅููุงููุง ูุชุญุฑูุฑ ู…ูุงุฑุฏูุง ุนุจุฑ IAsyncDisposable.
+// สำฬํแ ฮฯใษ UDP ฿ไๆฺ ใแใๆำ แรไ ServerHost ใำฤๆแ ฺไ ฯๆัษ อํวสๅว
+// ๆลํÞวÝๅว ๆสอัํั ใๆวัฯๅว ฺศั IAsyncDisposable.
 services.AddSingleton(sp => new UdpMediaRelayService(
     sp.GetRequiredService<IConversationRepository>(),
     sp.GetRequiredService<IUserPresenceRepository>(),
     sp.GetRequiredService<IAppLogger>(),
     NetworkConfig.UdpMediaPort));
 
-// ุชูููุฑ ููุณ instance ุนุจุฑ ูุงุฌูุฉ ุถููุฉ.
-// ProtocolRouter ูุง ูุญุชุงุฌ ุฅูู ู…ุนุฑูุฉ ุชูุงุตูู ุชุดุบูู ุฃู ุฅููุงู ุฎุฏู…ุฉ UDPุ
-// ูุฐูู ูุนุชู…ุฏ ููุท ุนูู IMediaRelayCoordinator.
+// สๆÝํั ไÝำ instance ฺศั ๆวฬๅษ ึํÞษ.
+// ProtocolRouter แว ํอสวฬ ลแ์ ใฺัÝษ สÝวีํแ สิÛํแ รๆ ลํÞวÝ ฮฯใษ UDPบ
+// แะแ฿ ํฺสใฯ ÝÞุ ฺแ์ IMediaRelayCoordinator.
 services.AddSingleton<IMediaRelayCoordinator>(
     sp => sp.GetRequiredService<UdpMediaRelayService>());
 
 // ---------------------------------------------------------------------------
-// ู…ูุฌู‘ู ุฑุณุงุฆู ุงูุจุฑูุชูููู ูุฏูุฑุฉ ุญูุงุฉ ุงูุงุชุตุงูุงุช
+// ใๆฬ๘ๅ ัำวฦแ วแศัๆสๆ฿ๆแ ๆฯๆัษ อํวษ วแวสีวแวส
 // ---------------------------------------------------------------------------
 
-// ProtocolRouter ู…ุณุคูู ุนู ุชุญููู ุงูุฑุณุงุฆู ุงููุงุฑุฏุฉ ู…ู ุงูุนู…ูุงุก ุฅูู ุนู…ููุงุช
-// ุชุณุฌูู ุงูุฏุฎูู ูุงูู…ูุงูู…ุงุช ูุฅุฏุงุฑุฉ ุงูุบุฑูุ ุซู… ุฅุฑุณุงู ุงููุชุงุฆุฌ ุฅูู ุงูุนู…ูุงุก.
+// ProtocolRouter ใำฤๆแ ฺไ สอๆํแ วแัำวฦแ วแๆวัฯษ ใไ วแฺใแวม ลแ์ ฺใแํวส
+// สำฬํแ วแฯฮๆแ ๆวแใ฿วแใวส ๆลฯวัษ วแÛัÝก หใ ลัำวแ วแไสวฦฬ ลแ์ วแฺใแวม.
 services.AddSingleton<ProtocolRouter>();
 
-// ุงุณุชุฎุฏุงู… ููุณ instance ู…ู ProtocolRouter ูุชูููุฐ ูุงุฌูุฉ ุชูุฒูุน ุงูุฑุณุงุฆู.
+// วำสฮฯวใ ไÝำ instance ใไ ProtocolRouter แสไÝํะ ๆวฬๅษ สๆาํฺ วแัำวฦแ.
 services.AddSingleton<IProtocolMessageDispatcher>(
     sp => sp.GetRequiredService<ProtocolRouter>());
 
-// ุงุณุชุฎุฏุงู… ููุณ instance ูุชูููุฐ ุชูุธูู ุงูุฌูุณุฉ ุจุนุฏ ุงููุทุงุน ุงูุนู…ูู.
-// ูุฐุง ูุถู…ู ุฅุฒุงูุฉ ุงูู…ุณุชุฎุฏู… ู…ู Presence ูุฅุบูุงู ุงูุญุงูุงุช ุงูู…ุฑุชุจุทุฉ ุจู.
+// วำสฮฯวใ ไÝำ instance แสไÝํะ สไูํÝ วแฬแำษ ศฺฯ วไÞุวฺ วแฺใํแ.
+// ๅะว ํึใไ ลาวแษ วแใำสฮฯใ ใไ Presence ๆลÛแวÞ วแอวแวส วแใัสศุษ ศๅ.
 services.AddSingleton<IConnectionLifecycleHandler>(
     sp => sp.GetRequiredService<ProtocolRouter>());
 
 // ---------------------------------------------------------------------------
-// ูุงุฌูุฉ HTTP ูููุฑุงุกุฉ ูุงูู…ุฑุงูุจุฉ
+// ๆวฬๅษ HTTP แแÞัวมษ ๆวแใัวÞศษ
 // ---------------------------------------------------------------------------
 
-// ApiServer ุชุนุฑุถ ู…ุนููู…ุงุช ุงููุฑุงุกุฉ ููุท ู…ุซู:
-// - ุญุงูุฉ ุงูุฎุงุฏู….
-// - ุงูู…ุณุชุฎุฏู…ูู ุงูู…ุชุตููู.
-// - ุงูุบุฑู ุงูุญุงููุฉ.
-// - ุงูุฌูุณุงุช ุงููุดุทุฉ.
+// ApiServer สฺัึ ใฺแๆใวส วแÞัวมษ ÝÞุ ใหแ:
+// - อวแษ วแฮวฯใ.
+// - วแใำสฮฯใํไ วแใสีแํไ.
+// - วแÛัÝ วแอวแํษ.
+// - วแฬแำวส วแไิุษ.
 //
-// ูุง ุชุณุชุฎุฏู… ูุฐู ุงููุงุฌูุฉ ูุชูููุฐ ุชุณุฌูู ุงูุฏุฎูู ุนุจุฑ TCP.
+// แว สำสฮฯใ ๅะๅ วแๆวฬๅษ แสไÝํะ สำฬํแ วแฯฮๆแ ฺศั TCP.
 services.AddSingleton(sp => new ApiServer(
     sp.GetRequiredService<IUserPresenceRepository>(),
     sp.GetRequiredService<IConversationRepository>(),
@@ -137,15 +117,15 @@ services.AddSingleton(sp => new ApiServer(
     HttpApiPort));
 
 // ---------------------------------------------------------------------------
-// ู…ุถูู ุงูุฎุงุฏู… ุงูุฑุฆูุณู
+// ใึํÝ วแฮวฯใ วแัฦํำํ
 // ---------------------------------------------------------------------------
 
-// ServerHost ูู ุงูู…ุณุคูู ุนู ุชูุณูู ู…ูุงุฑุฏ ุงูุชุดุบูู ุงูุฑุฆูุณูุฉ:
-// - ุงุณุชูุจุงู ุงุชุตุงูุงุช TCP.
-// - ุฅูุดุงุก ClientSession ููู ุนู…ูู.
-// - ุชุดุบูู UDP Media Relay.
-// - ุชุดุบูู HTTP API.
-// - ุชูููุฐ ุงูุฅุบูุงู ุงูู…ูุธู… ุนูุฏ ุฅููุงู ุงูุชุทุจูู.
+// ServerHost ๅๆ วแใำฤๆแ ฺไ สไำํÞ ใๆวัฯ วแสิÛํแ วแัฦํำํษ:
+// - วำสÞศวแ วสีวแวส TCP.
+// - ลไิวม ClientSession แ฿แ ฺใํแ.
+// - สิÛํแ UDP Media Relay.
+// - สิÛํแ HTTP API.
+// - สไÝํะ วแลÛแวÞ วแใไูใ ฺไฯ ลํÞวÝ วแสุศํÞ.
 services.AddSingleton(sp => new ServerHost(
     sp.GetRequiredService<IProtocolMessageDispatcher>(),
     sp.GetRequiredService<IConnectionLifecycleHandler>(),
@@ -156,29 +136,41 @@ services.AddSingleton(sp => new ServerHost(
     tcpPort: NetworkConfig.TcpControlPort));
 
 // ---------------------------------------------------------------------------
-// ุจูุงุก ู…ุฒูุฏ ุงูุฎุฏู…ุงุช
+// ศไวม ใาๆฯ วแฮฯใวส
 // ---------------------------------------------------------------------------
 
-// ุจูุงุก ุญุงููุฉ ุงูุงุนุชู…ุงุฏูุงุช ุจุนุฏ ุงูุชู…ุงู ุฌู…ูุน ุงูุชุณุฌููุงุช.
-// ูุชู… ุงูุชุฎูุต ู…ููุง ุชููุงุฆููุง ุนูุฏ ุงูุชูุงุก ุงูุชุทุจูู.
+// ศไวม อวๆํษ วแวฺสใวฯํวส ศฺฯ ว฿สใวแ ฬใํฺ วแสำฬํแวส.
+// ํสใ วแสฮแี ใไๅว สแÞวฦํ๐ว ฺไฯ วไสๅวม วแสุศํÞ.
 await using var provider = services.BuildServiceProvider();
 
-// ุฑู…ุฒ ุงูุฅูุบุงุก ุงูู…ุดุชุฑู ูุฅููุงู ุฌู…ูุน ุงูุฎุฏู…ุงุช ุจุดูู ู…ูุธู….
+// ัใา วแลแÛวม วแใิสั฿ แลํÞวÝ ฬใํฺ วแฮฯใวส ศิ฿แ ใไูใ.
 using var shutdown = new CancellationTokenSource();
 
-// ุงุนุชุฑุงุถ Ctrl+C ูู…ูุน ุงูุฅููุงุก ุงูููุฑูุ ุซู… ุฅุฑุณุงู ุฅุดุงุฑุฉ ุฅููุงู
-// ุฅูู ServerHost ูุจููุฉ ุงูุฎุฏู…ุงุช.
 Console.CancelKeyPress += (_, args) =>
 {
     args.Cancel = true;
     shutdown.Cancel();
 };
 
-// ุงูุญุตูู ุนูู ุงูู…ุถูู ู…ู ุญุงููุฉ ุงูุงุนุชู…ุงุฏูุงุช.
-// using ูุถู…ู ุชุญุฑูุฑ ุงูู…ูุงุฑุฏ ุนูุฏ ุงูุชูุงุก ุฏูุฑุฉ ุญูุงุฉ ุงูุฎุงุฏู….
+try
+{
+    await provider.GetRequiredService<DatabaseInitializer>().InitializeAsync(shutdown.Token);
+
+    // ุฌูุณุงุช/ู…ูุงูู…ุงุช ุจููุช ู…ูุชูุญุฉ ุจุณุจุจ ุฅููุงู ู…ูุงุฌุฆ ุณุงุจู ุชูุบูู ุงูุขู (ุงูุญุงูุฉ ุงูุญูุฉ ูุง ุชูุณุชุนุงุฏ ุจุนุฏ ุฅุนุงุฏุฉ ุงูุชุดุบูู)
+    await provider.GetRequiredService<IUserSessionRepository>().EndAllActiveAsync(shutdown.Token);
+    await provider.GetRequiredService<ICallRepository>().MarkStaleAsInterruptedAsync(shutdown.Token);
+}
+catch (Exception ex) when (ex is not OperationCanceledException)
+{
+    provider.GetRequiredService<IAppLogger>().Error(
+        "Database initialization failed. Make sure SQL Server Express LocalDB is installed " +
+        $"(run: sqllocaldb info) and check ConnectionStrings:{DatabaseOptions.ConnectionStringName} in appsettings.json. Details: {ex.Message}");
+    return;
+}
+
 await using var server = provider.GetRequiredService<ServerHost>();
 
 Console.WriteLine("VideoCall server started. Press Ctrl+C to stop.");
 
-// ุจุฏุก ุฏูุฑุฉ ุชุดุบูู ุงูุฎุงุฏู… ูุงูุชุธุงุฑ ุงูุฅููุงู ุฃู ุงูุฅูุบุงุก.
+// ศฯม ฯๆัษ สิÛํแ วแฮวฯใ ๆวไสูวั วแลํÞวÝ รๆ วแลแÛวม.
 await server.RunAsync(shutdown.Token);

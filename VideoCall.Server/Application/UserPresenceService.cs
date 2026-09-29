@@ -5,16 +5,16 @@ using VideoCall.Server.Domain.Repositories;
 namespace VideoCall.Server.Application;
 
 /// <summary>
-/// ÙŠØ¯ÙŠØ± Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…ÙŠÙ† Ø§Ù„Ù…ØªØµÙ„ÙŠÙ† ÙˆÙŠØ±Ø¨Ø· ÙƒÙ„ Ù…Ø³ØªØ®Ø¯Ù… Ø¨Ø¬Ù„Ø³Ø© Ø§Ù„Ø§ØªØµØ§Ù„ Ø§Ù„Ø®Ø§ØµØ© Ø¨Ù‡.
+/// íÏíÑ ÇáãÓÊÎÏãíä ÇáãÊÕáíä æíÑÈØ ßá ãÓÊÎÏã ÈÌáÓÉ ÇáÇÊÕÇá ÇáÎÇÕÉ Èå.
 /// </summary>
 public sealed class UserPresenceService : IUserPresenceRepository
 {
-    // Ù‚Ø§Ù…ÙˆØ³ Ø¢Ù…Ù† Ù„Ù„Ø§Ø³ØªØ®Ø¯Ø§Ù… Ù…Ø¹ Ø¹Ø¯Ø© Ø¬Ù„Ø³Ø§Øª ÙÙŠ Ø§Ù„ÙˆÙ‚Øª Ù†ÙØ³Ù‡.
+    // ŞÇãæÓ Âãä ááÇÓÊÎÏÇã ãÚ ÚÏÉ ÌáÓÇÊ İí ÇáæŞÊ äİÓå.
     private readonly ConcurrentDictionary<string, IClientHandler> _online =
         new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// ÙŠØ¶ÙŠÙ Ù…Ø³ØªØ®Ø¯Ù…Ù‹Ø§ Ø¥Ù„Ù‰ Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„Ù…ØªØµÙ„ÙŠÙ†.
+    /// íÖíİ ãÓÊÎÏãğÇ Åáì ŞÇÆãÉ ÇáãÊÕáíä.
     /// </summary>
     public bool TryAdd(string username, IClientHandler session)
     {
@@ -23,20 +23,20 @@ public sealed class UserPresenceService : IUserPresenceRepository
     }
 
     /// <summary>
-    /// ÙŠØ¨Ø­Ø« Ø¹Ù† Ø¬Ù„Ø³Ø© Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù….
+    /// íÈÍË Úä ÌáÓÉ ÇáãÓÊÎÏã.
     /// </summary>
     public bool TryGet(string username, out IClientHandler session) =>
         _online.TryGetValue(username, out session!);
 
     /// <summary>
-    /// ÙŠØªØ­Ù‚Ù‚ Ù…Ù† Ø§ØªØµØ§Ù„ Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù… Ø­Ø§Ù„ÙŠÙ‹Ø§.
+    /// íÊÍŞŞ ãä ÇÊÕÇá ÇáãÓÊÎÏã ÍÇáíğÇ.
     /// </summary>
     public bool IsOnline(string username) =>
         !string.IsNullOrWhiteSpace(username) &&
         _online.ContainsKey(username.Trim());
 
     /// <summary>
-    /// ÙŠØ²ÙŠÙ„ Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù… Ø¥Ø°Ø§ ÙƒØ§Ù†Øª Ø§Ù„Ø¬Ù„Ø³Ø© Ø§Ù„Ø­Ø§Ù„ÙŠØ© Ù…Ø·Ø§Ø¨Ù‚Ø© Ù„Ù„Ø¬Ù„Ø³Ø© Ø§Ù„Ù…ØªÙˆÙ‚Ø¹Ø©.
+    /// íÒíá ÇáãÓÊÎÏã ÅĞÇ ßÇäÊ ÇáÌáÓÉ ÇáÍÇáíÉ ãØÇÈŞÉ ááÌáÓÉ ÇáãÊæŞÚÉ.
     /// </summary>
     public bool Remove(string username, IClientHandler expectedSession)
     {
@@ -52,7 +52,7 @@ public sealed class UserPresenceService : IUserPresenceRepository
     }
 
     /// <summary>
-    /// ÙŠØ¹ÙŠØ¯ Ø£Ø³Ù…Ø§Ø¡ Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…ÙŠÙ† Ø§Ù„Ù…ØªØµÙ„ÙŠÙ† Ù…Ø±ØªØ¨Ø© Ø£Ø¨Ø¬Ø¯ÙŠÙ‹Ø§.
+    /// íÚíÏ ÃÓãÇÁ ÇáãÓÊÎÏãíä ÇáãÊÕáíä ãÑÊÈÉ ÃÈÌÏíğÇ.
     /// </summary>
     public IReadOnlyList<string> GetUsernames() =>
         _online.Keys
@@ -60,7 +60,7 @@ public sealed class UserPresenceService : IUserPresenceRepository
             .ToArray();
 
     /// <summary>
-    /// ÙŠØ¹ÙŠØ¯ Ø¬Ù„Ø³Ø§Øª Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…ÙŠÙ† Ø§Ù„Ù…ØªØµÙ„ÙŠÙ†.
+    /// íÚíÏ ÌáÓÇÊ ÇáãÓÊÎÏãíä ÇáãÊÕáíä.
     /// </summary>
     public IReadOnlyList<IClientHandler> GetSessions() =>
         _online.Values.ToArray();

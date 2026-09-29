@@ -15,13 +15,13 @@ public partial class RoomWindow : Window
     // ãÑÌÚ ááäÇİĞÉ ÇáİÑÚíÉ ÇáÎÇÕÉ ÈÚÑÖ ÇáßÇãíÑÇÊ æÇáæÓÇÆØ ÇáÌãÇÚíÉ
     private GroupCallWindow? _groupCallWindow;
 
-    public RoomWindow(INetworkClient network)
+    public RoomWindow(INetworkClient network, System.Collections.ObjectModel.ObservableCollection<string>? onlineUsers = null)
     {
         InitializeComponent();
         _network = network;
 
         // ÊåíÆÉ ÇáÜ ViewModel æÑÈØå ÈÇáæÇÌåÉ (DataContext) áÖãÇä ÊİÇÚá ÇáÚäÇÕÑ
-        _viewModel = new RoomViewModel(network);
+        _viewModel = new RoomViewModel(network, onlineUsers);
         _viewModel.GroupMediaStarted += OnGroupMediaStarted;
         DataContext = _viewModel;
     }
