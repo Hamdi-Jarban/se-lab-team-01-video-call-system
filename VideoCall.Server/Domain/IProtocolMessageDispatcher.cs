@@ -3,17 +3,17 @@ using VideoCall.Shared.Messages;
 namespace VideoCall.Server.Domain;
 
 /// <summary>
-/// ูุญูู‘ู ุงูุฑุณุงุฆู ุงููุงุฑุฏุฉ ู…ู ุงูุนู…ูู ุฅูู ุงูุนู…ููุงุช ุงูู…ูุงุณุจุฉ ุฏุงุฎู ุงูุชุทุจููุ
-/// ู…ุซู ุชุณุฌูู ุงูุฏุฎูู ูุฅุฏุงุฑุฉ ุงูู…ูุงูู…ุงุช ูุงูุบุฑู.
+/// ํอๆ๘แ วแัำวฦแ วแๆวัฯษ ใไ วแฺใํแ ลแ์ วแฺใแํวส วแใไวำศษ ฯวฮแ วแสุศํÞก
+/// ใหแ สำฬํแ วแฯฮๆแ ๆลฯวัษ วแใ฿วแใวส ๆวแÛัÝ.
 /// </summary>
 public interface IProtocolMessageDispatcher
 {
     /// <summary>
-    /// ูุนุงูุฌ ุฑุณุงูุฉ ูุงุฑุฏุฉ ู…ู ุฌูุณุฉ ุงูุนู…ูู.
+    /// ํฺวแฬ ัำวแษ ๆวัฯษ ใไ ฬแำษ วแฺใํแ.
     /// </summary>
-    /// <param name="session">ุฌูุณุฉ ุงูุนู…ูู ุงูู…ุฑุณูุฉ ููุฑุณุงูุฉ.</param>
-    /// <param name="message">ุงูุฑุณุงูุฉ ุงููุงุฑุฏุฉ.</param>
-    /// <param name="ct">ุฑู…ุฒ ุฅูุบุงุก ุงูุนู…ููุฉ.</param>
+    /// <param name="session">ฬแำษ วแฺใํแ วแใัำแษ แแัำวแษ.</param>
+    /// <param name="message">วแัำวแษ วแๆวัฯษ.</param>
+    /// <param name="ct">ัใา ลแÛวม วแฺใแํษ.</param>
     Task DispatchAsync(
         IClientHandler session,
         Message message,

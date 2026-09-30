@@ -34,6 +34,18 @@ public interface INetworkClient : IDisposable
     event Action<RoomInviteAcceptedPayload>? RoomInviteAccepted;
     event Action<RoomInviteRejectedPayload>? RoomInviteRejected;
 
+    // ----- التسجيل والمراسلة الدائمة -----
+    event Action<RegisterResponsePayload>? RegisterResponseReceived;
+    event Action<ConversationOpenedPayload>? ConversationOpened;
+    event Action<ConversationMembersPayload>? ConversationMembersUpdated;
+    event Action<ConversationRemovedPayload>? ConversationRemoved;
+    event Action<MessageReceivedPayload>? ChatMessageReceived;
+    event Action<GetConversationsResponsePayload>? ConversationsLoaded;
+    event Action<GetMessagesResponsePayload>? MessagesLoaded;
+    event Action<ChatErrorPayload>? ChatErrorReceived;
+    event Action<MessageEditedPayload>? MessageEdited;
+    event Action<MessageDeletedPayload>? MessageDeleted;
+
     // دوال (Methods) لإرسال الطلبات إلى السيرفر
     Task<bool> ConnectAsync(string host);
     Task LoginAsync(string username, string password);
@@ -49,4 +61,20 @@ public interface INetworkClient : IDisposable
     Task LeaveRoomAsync(string roomId);
     Task StartRoomMediaAsync(string roomId);
     Task StopRoomMediaAsync(string roomId, Guid mediaId);
+
+    Task RegisterAsync(string username, string password, string? displayName);
+
+    // يرسل Disconnect للخادم ويغلق الاتصال محليًا (يُستدعى عند تسجيل الخروج)
+    Task LogoutAsync();
+
+    Task OpenPrivateChatAsync(string username);
+    Task CreateGroupAsync(string name, IReadOnlyList<string> memberUsernames);
+    Task AddGroupMembersAsync(int conversationId, IReadOnlyList<string> usernames);
+    Task RemoveGroupMemberAsync(int conversationId, string username);
+    Task GetGroupMembersAsync(int conversationId);
+    Task SendChatMessageAsync(int conversationId, string content);
+    Task EditChatMessageAsync(int conversationId, long messageId, string content);
+    Task DeleteChatMessageAsync(int conversationId, long messageId);
+    Task GetConversationsAsync();
+    Task GetMessagesAsync(int conversationId, long? beforeMessageId = null, int limit = 50);
 }

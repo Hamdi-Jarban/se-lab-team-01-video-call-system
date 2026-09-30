@@ -85,6 +85,8 @@ public sealed class LoginViewModel : ViewModelBase, IDisposable
             {
                 ErrorCodes.InvalidCredentials => "ÈםÇהÇÊ ÇבÏÎזב ÛםÑ ÕÍםÍÉ.",
                 ErrorCodes.AlreadyLoggedIn => "ÇבדÓÊÎÏד דÓÌב ÇבÏÎזב דÓÈÞנÇ.",
+                ErrorCodes.ServerUnavailable => ErrorTexts.ForCode(ErrorCodes.ServerUnavailable),
+                ErrorCodes.TooManyAttempts => ErrorTexts.ForCode(ErrorCodes.TooManyAttempts),
                 _ => "ÝÔב ÊÓÌםב ÇבÏÎזב."
             };
         });

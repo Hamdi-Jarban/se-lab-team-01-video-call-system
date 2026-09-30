@@ -1,6 +1,7 @@
 using VideoCall.Server.Domain;
 using VideoCall.Server.Domain.Logging;
 using VideoCall.Server.Domain.Repositories;
+using VideoCall.Server.Domain.Services;
 using VideoCall.Shared.Messages;
 using System.Collections.Concurrent;
 using VideoCall.Shared.Models;
@@ -8,16 +9,19 @@ using VideoCall.Shared.Models;
 namespace VideoCall.Server.Application;
 
 /// <summary>
-/// ÙŠÙˆØ¬Ù‘Ù‡ Ø±Ø³Ø§Ø¦Ù„ Ø¨Ø±ÙˆØªÙˆÙƒÙˆÙ„ TCP Ø¥Ù„Ù‰ Ø§Ù„Ø¹Ù…Ù„ÙŠØ§Øª Ø§Ù„Ù…Ù†Ø§Ø³Ø¨Ø© Ø¯Ø§Ø®Ù„ Ø§Ù„ØªØ·Ø¨ÙŠÙ‚ØŒ
-/// Ù…Ø«Ù„ ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„ ÙˆØ§Ù„Ù…ÙƒØ§Ù„Ù…Ø§Øª ÙˆØ¥Ø¯Ø§Ø±Ø© Ø§Ù„ØºØ±Ù.
-/// ÙŠØ¹ØªÙ…Ø¯ Ø¹Ù„Ù‰ ÙˆØ§Ø¬Ù‡Ø§Øª Domain ÙˆÙ„Ø§ ÙŠØªØ¹Ø§Ù…Ù„ Ù…Ø¹ Socket Ù…Ø¨Ø§Ø´Ø±Ø©.
+/// íæÌøå ÑÓÇÆá ÈÑæÊæßæá TCP Åáì ÇáÚãáíÇÊ ÇáãäÇÓÈÉ ÏÇÎá ÇáÊØÈíŞ¡
+/// ãËá ÊÓÌíá ÇáÏÎæá æÇáãßÇáãÇÊ æÅÏÇÑÉ ÇáÛÑİ.
+/// íÚÊãÏ Úáì æÇÌåÇÊ Domain æáÇ íÊÚÇãá ãÚ Socket ãÈÇÔÑÉ.
 /// </summary>
 public sealed class ProtocolRouter : IProtocolMessageDispatcher, IConnectionLifecycleHandler
 {
     private readonly IUserPresenceRepository _presence;
     private readonly IConversationRepository _conversations;
     private readonly IMediaRelayCoordinator _media;
-    private readonly ICredentialValidator _credentials;
+    private readonly IAuthService _auth;
+    private readonly LoginThrottle _throttle;
+    private readonly ChatProtocolHandler _chat;
+    private readonly ICallHistoryRecorder _callHistory;
     private readonly IAppLogger _logger;
     private readonly ConcurrentDictionary<Guid, PendingRoomInvite> _pendingInvites = new();
 
@@ -27,13 +31,19 @@ public sealed class ProtocolRouter : IProtocolMessageDispatcher, IConnectionLife
         IUserPresenceRepository presence,
         IConversationRepository conversations,
         IMediaRelayCoordinator media,
-        ICredentialValidator credentials,
+        IAuthService auth,
+        LoginThrottle throttle,
+        ChatProtocolHandler chat,
+        ICallHistoryRecorder callHistory,
         IAppLogger logger)
     {
         _presence = presence ?? throw new ArgumentNullException(nameof(presence));
         _conversations = conversations ?? throw new ArgumentNullException(nameof(conversations));
         _media = media ?? throw new ArgumentNullException(nameof(media));
-        _credentials = credentials ?? throw new ArgumentNullException(nameof(credentials));
+        _auth = auth ?? throw new ArgumentNullException(nameof(auth));
+        _throttle = throttle ?? throw new ArgumentNullException(nameof(throttle));
+        _chat = chat ?? throw new ArgumentNullException(nameof(chat));
+        _callHistory = callHistory ?? throw new ArgumentNullException(nameof(callHistory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -42,8 +52,19 @@ public sealed class ProtocolRouter : IProtocolMessageDispatcher, IConnectionLife
         ArgumentNullException.ThrowIfNull(session);
         ArgumentNullException.ThrowIfNull(message);
 
+        // Ø±Ø³Ø§Ø¦Ù„ Ø§Ù„Ù…Ø±Ø§Ø³Ù„Ø© Ø§Ù„Ø¯Ø§Ø¦Ù…Ø© ØªÙØ¹Ø§Ù„Ø¬ ÙÙŠ ChatProtocolHandler (ÙØµÙ„ Ø§Ù„Ù…Ø³Ø¤ÙˆÙ„ÙŠØ§Øª)
+        if (ChatProtocolHandler.CanHandle(message.Type))
+        {
+            await _chat.HandleAsync(session, message, ct);
+            return;
+        }
+
         switch (message.Type)
         {
+            case MessageType.RegisterRequest:
+                await RegisterAsync(session, message.ReadPayload<RegisterRequestPayload>(), ct);
+                return;
+
             case MessageType.LoginRequest:
                 await LoginAsync(session, message.ReadPayload<LoginRequestPayload>(), ct);
                 return;
@@ -114,32 +135,104 @@ public sealed class ProtocolRouter : IProtocolMessageDispatcher, IConnectionLife
             return;
         }
 
-        var username = request.Username?.Trim();
-        if (string.IsNullOrWhiteSpace(username) || username.Length > 64 ||
-            !_credentials.Validate(username, request.Password ?? string.Empty))
+        var requestedUsername = request.Username?.Trim();
+        if (string.IsNullOrWhiteSpace(requestedUsername) || requestedUsername.Length > 64)
         {
-            await session.SendAsync(Message.Create(
-                MessageType.LoginResponse,
-                new LoginResponsePayload(false, ErrorCodes.InvalidCredentials, null, null)), ct);
+            await SendLoginFailureAsync(session, ErrorCodes.InvalidCredentials, ct);
             return;
         }
 
-        if (!_presence.TryAdd(username, session))
+        if (_throttle.IsLocked(requestedUsername))
         {
-            await session.SendAsync(Message.Create(
-                MessageType.LoginResponse,
-                new LoginResponsePayload(false, ErrorCodes.AlreadyLoggedIn, null, null)), ct);
+            await SendLoginFailureAsync(session, ErrorCodes.TooManyAttempts, ct);
             return;
         }
 
-        session.SetAuthenticatedUsername(username);
-        _logger.Info($"{username} logged in.");
+        // 1) Ø§Ù„ØªØ­Ù‚Ù‚ Ù…Ù† Ø§Ù„Ø­Ø³Ø§Ø¨ ÙˆÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ± Ù…Ù† SQL Server
+        AuthenticationResult auth;
+        try
+        {
+            auth = await _auth.AuthenticateAsync(requestedUsername, request.Password ?? string.Empty, ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.Error($"Login failed because the database is unavailable: {ex.Message}");
+            await SendLoginFailureAsync(session, ErrorCodes.ServerUnavailable, ct);
+            return;
+        }
+
+        if (!auth.Success)
+        {
+            _throttle.RegisterFailure(requestedUsername);
+            await SendLoginFailureAsync(session, ErrorCodes.InvalidCredentials, ct);
+            return;
+        }
+
+        _throttle.Reset(requestedUsername);
+
+        // 2) Ø§Ù„Ø­Ø¶ÙˆØ± (Online Presence) ÙŠØ¨Ù‚Ù‰ ÙÙŠ Ø§Ù„Ø°Ø§ÙƒØ±Ø© Ù„Ø£Ù†Ù‡ Ø­Ø§Ù„Ø© RuntimeØŒ Ù„ÙƒÙ†Ù‡ Ù…Ø±ØªØ¨Ø· Ø¨Ù…Ø³ØªØ®Ø¯Ù… Ù…ÙˆØ¬ÙˆØ¯ ÙÙŠ SQL
+        if (!_presence.TryAdd(auth.Username, session))
+        {
+            await SendLoginFailureAsync(session, ErrorCodes.AlreadyLoggedIn, ct);
+            return;
+        }
+
+        // Ù†Ø±Ø¨Ø· Ø§Ù„Ø¬Ù„Ø³Ø© Ø¨Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù… ÙÙˆØ±Ù‹Ø§ (Ù‚Ø¨Ù„ Ø£ÙŠ await) Ø­ØªÙ‰ ÙŠÙÙ†Ø¸ÙÙ‘Ù Ø§Ù„Ø­Ø¶ÙˆØ± ØªÙ„Ù‚Ø§Ø¦ÙŠÙ‹Ø§ Ù„Ùˆ Ø§Ù†Ù‚Ø·Ø¹ Ø§Ù„Ø§ØªØµØ§Ù„ Ø§Ù„Ø¢Ù†
+        session.SetAuthenticatedUser(auth.UserId, auth.Username);
+
+        // 3) ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¬Ù„Ø³Ø© ÙÙŠ UserSessions ÙˆØªØ­Ø¯ÙŠØ« LastLoginAt
+        try
+        {
+            await _auth.StartSessionAsync(session.SessionToken, auth.UserId, ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.Error($"Could not create the session row for {auth.Username}: {ex.Message}");
+            await SendLoginFailureAsync(session, ErrorCodes.ServerUnavailable, ct);
+            await session.CloseAsync();
+            return;
+        }
+
+        _logger.Info($"{auth.Username} logged in.");
         await session.SendAsync(Message.Create(
             MessageType.LoginResponse,
-            new LoginResponsePayload(true, null, username, session.SessionToken)), ct);
+            new LoginResponsePayload(true, null, auth.Username, session.SessionToken)), ct);
 
         await BroadcastPresenceAsync(ct);
     }
+
+    private async Task RegisterAsync(IClientHandler session, RegisterRequestPayload? request, CancellationToken ct)
+    {
+        if (request is null || session.IsAuthenticated)
+        {
+            await session.SendAsync(Message.Create(
+                MessageType.RegisterResponse,
+                new RegisterResponsePayload(false, ErrorCodes.InvalidRequest, null)), ct);
+            return;
+        }
+
+        RegisterResult result;
+        try
+        {
+            result = await _auth.RegisterAsync(request.Username ?? string.Empty, request.Password ?? string.Empty, request.DisplayName, ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.Error($"Registration failed because the database is unavailable: {ex.Message}");
+            result = RegisterResult.Fail(ErrorCodes.ServerUnavailable);
+        }
+
+        if (result.Success) _logger.Info($"{result.Username} registered.");
+
+        await session.SendAsync(Message.Create(
+            MessageType.RegisterResponse,
+            new RegisterResponsePayload(result.Success, result.ErrorCode, result.Username)), ct);
+    }
+
+    private static Task SendLoginFailureAsync(IClientHandler session, string errorCode, CancellationToken ct) =>
+        session.SendAsync(Message.Create(
+            MessageType.LoginResponse,
+            new LoginResponsePayload(false, errorCode, null, null)), ct);
 
     private async Task RequestPrivateCallAsync(IClientHandler session, CallRequestPayload? request, CancellationToken ct)
     {
@@ -164,8 +257,11 @@ public sealed class ProtocolRouter : IProtocolMessageDispatcher, IConnectionLife
             MessageType.CallRequest,
             new CallRequestPayload(callId, caller, callee));
         await SendToUserAsync(callee, callRequestMessage, ct);
-        // Ø¥Ø¹Ø§Ø¯Ø© Ù…Ø¹Ø±Ù Ø§Ù„Ù…ÙƒØ§Ù„Ù…Ø© Ø§Ù„Ø°ÙŠ Ø£Ù†Ø´Ø£Ù‡ Ø§Ù„Ø®Ø§Ø¯Ù… Ø¥Ù„Ù‰ Ø§Ù„Ø¹Ù…ÙŠÙ„.
+        // ÅÚÇÏÉ ãÚÑİ ÇáãßÇáãÉ ÇáĞí ÃäÔÃå ÇáÎÇÏã Åáì ÇáÚãíá.
         await SendToUserAsync(caller, callRequestMessage, ct);
+
+        // Ø³Ø¬Ù„ Ø§Ù„Ù…ÙƒØ§Ù„Ù…Ø§Øª ÙÙŠ SQL (Ù„Ø§ ÙŠØ¤Ø«Ø± ÙØ´Ù„Ù‡ Ø¹Ù„Ù‰ Ø§Ù„Ù…ÙƒØ§Ù„Ù…Ø©)
+        await _callHistory.PrivateCallStartedAsync(callId, session.UserId);
     }
 
     private async Task AcceptPrivateCallAsync(IClientHandler session, CallAcceptedPayload? request, CancellationToken ct)
@@ -183,6 +279,7 @@ public sealed class ProtocolRouter : IProtocolMessageDispatcher, IConnectionLife
             MessageType.CallAccepted,
             new CallAcceptedPayload(request.CallId, request.Caller, username)), ct);
         await StartMediaForConversationAsync(id, ct);
+        _ = _callHistory.StatusChangedAsync(request.CallId, CallStatus.Connected);
     }
 
     private async Task RejectPrivateCallAsync(IClientHandler session, CallRejectedPayload? request, CancellationToken ct)
@@ -193,6 +290,7 @@ public sealed class ProtocolRouter : IProtocolMessageDispatcher, IConnectionLife
         if (result != ConversationOperation.Success) return;
 
         _media.ForgetConversation(id);
+        _ = _callHistory.StatusChangedAsync(request.CallId, CallStatus.Rejected);
         var message = Message.Create(
             MessageType.CallRejected,
             new CallRejectedPayload(request.CallId, request.Caller, username));
@@ -208,6 +306,7 @@ public sealed class ProtocolRouter : IProtocolMessageDispatcher, IConnectionLife
         if (result != ConversationOperation.Success) return;
 
         _media.ForgetConversation(id);
+        _ = _callHistory.StatusChangedAsync(request.CallId, CallStatus.Ended);
         var message = Message.Create(MessageType.CallEnded, new CallEndedPayload(request.CallId, username));
         foreach (var member in members.Where(x => !x.Equals(username, StringComparison.OrdinalIgnoreCase)))
             await SendToUserAsync(member, message, ct);
@@ -316,6 +415,9 @@ public sealed class ProtocolRouter : IProtocolMessageDispatcher, IConnectionLife
             return;
         }
         await StartMediaForConversationAsync(conversation.Id, ct);
+
+        if (conversation.MediaId is Guid roomCallId)
+            await _callHistory.RoomCallStartedAsync(roomCallId, conversation.Id, session.UserId);
     }
 
     private async Task StopGroupMediaAsync(IClientHandler session, StopRoomMediaPayload? request, CancellationToken ct)
@@ -326,6 +428,8 @@ public sealed class ProtocolRouter : IProtocolMessageDispatcher, IConnectionLife
         if (result != ConversationOperation.Success || conversation is null) return;
 
         _media.ForgetConversation(conversation.Id);
+        if (beforeStop?.MediaId is Guid stoppedCallId)
+            _ = _callHistory.StatusChangedAsync(stoppedCallId, CallStatus.Ended);
         var message = Message.Create(MessageType.RoomMediaStopped,
             new RoomMediaPayload(conversation.Id, beforeStop?.MediaId ?? Guid.Empty));
         await SendToConversationAsync(conversation.Id, message, ct);
@@ -354,13 +458,23 @@ public sealed class ProtocolRouter : IProtocolMessageDispatcher, IConnectionLife
     }
 
     /// <summary>
-    /// ÙŠÙ†ÙØ° ØªÙ†Ø¸ÙŠÙ Ø¬Ù„Ø³Ø© TCP Ø¨Ø¹Ø¯ Ø§Ù†Ù‚Ø·Ø§Ø¹ Ø§Ù„Ø¹Ù…ÙŠÙ„ØŒ Ù…Ø«Ù„ Ø¥Ø²Ø§Ù„Ø© Ø§Ù„Ø­Ø¶ÙˆØ±
-    /// ÙˆØ¥Ø®Ø±Ø§Ø¬ Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù… Ù…Ù† Ø§Ù„Ù…Ø­Ø§Ø¯Ø«Ø§Øª ÙˆØ¥Ø¨Ù„Ø§Øº Ø§Ù„Ø£Ø¹Ø¶Ø§Ø¡ Ø§Ù„Ù…ØªØ¨Ù‚ÙŠÙ†.
+    /// íäİĞ ÊäÙíİ ÌáÓÉ TCP ÈÚÏ ÇäŞØÇÚ ÇáÚãíá¡ ãËá ÅÒÇáÉ ÇáÍÖæÑ
+    /// æÅÎÑÇÌ ÇáãÓÊÎÏã ãä ÇáãÍÇÏËÇÊ æÅÈáÇÛ ÇáÃÚÖÇÁ ÇáãÊÈŞíä.
     /// </summary>
     public async Task HandleDisconnectAsync(IClientHandler session, CancellationToken ct)
     {
         if (session.Username is null) return;
         _presence.Remove(session.Username, session);
+
+        // Ø¥ØºÙ„Ø§Ù‚ Ø³Ø¬Ù„ Ø§Ù„Ø¬Ù„Ø³Ø© ÙÙŠ SQL (IsActive = 0, DisconnectedAt = NOW)
+        try
+        {
+            await _auth.EndSessionAsync(session.SessionToken, CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            _logger.Warn($"Could not close the SQL session for {session.Username}: {ex.Message}");
+        }
 
         foreach (var conversation in _conversations.RemoveUserFromAll(session.Username))
         {
@@ -379,12 +493,12 @@ public sealed class ProtocolRouter : IProtocolMessageDispatcher, IConnectionLife
         foreach (var session in _presence.GetSessions())
         {
             try { await session.SendAsync(message, ct); }
-            catch { /* ÙŠØªÙ… ØªÙ†Ø¸ÙŠÙ Ø§Ù„Ø¬Ù„Ø³Ø© Ù…Ù† Ø®Ù„Ø§Ù„ ClientSession. */ }
+            catch { /* íÊã ÊäÙíİ ÇáÌáÓÉ ãä ÎáÇá ClientSession. */ }
         }
     }
 
     /// <summary>
-    /// ÙŠØ­Ø§ÙˆÙ„ Ø¥Ø±Ø³Ø§Ù„ Ø±Ø³Ø§Ù„Ø© Ø¥Ù„Ù‰ Ù…Ø³ØªØ®Ø¯Ù… Ù…Ø­Ø¯Ø¯ØŒ ÙˆÙŠØ³Ø¬Ù„ Ø§Ù„Ø®Ø·Ø£ Ø¹Ù†Ø¯ ØªØ¹Ø°Ø± Ø§Ù„Ø¥Ø±Ø³Ø§Ù„.
+    /// íÍÇæá ÅÑÓÇá ÑÓÇáÉ Åáì ãÓÊÎÏã ãÍÏÏ¡ æíÓÌá ÇáÎØÃ ÚäÏ ÊÚĞÑ ÇáÅÑÓÇá.
     /// </summary>
     private async Task SendToUserAsync(string username, Message message, CancellationToken ct)
     {

@@ -79,5 +79,70 @@ public enum MessageType
     StopConversationMedia,
 
     // بدء وسائط المحادثة
-    StartConversationMedia
+    StartConversationMedia,
+
+    // ===== Authentication / Persistent messaging (appended: keeps existing numeric values stable) =====
+
+    // طلب تسجيل حساب جديد
+    RegisterRequest,
+
+    // استجابة تسجيل الحساب
+    RegisterResponse,
+
+    // طلب فتح (أو إنشاء) محادثة خاصة مع مستخدم
+    OpenPrivateChatRequest,
+
+    // إشعار بفتح/إنشاء محادثة (خاصة أو جماعية)
+    ConversationOpened,
+
+    // طلب إنشاء مجموعة
+    CreateGroupRequest,
+
+    // طلب إضافة أعضاء إلى مجموعة
+    AddGroupMembersRequest,
+
+    // طلب إزالة عضو من مجموعة (أو مغادرتها)
+    RemoveGroupMemberRequest,
+
+    // طلب جلب أعضاء مجموعة
+    GetGroupMembersRequest,
+
+    // تحديث أعضاء محادثة
+    ConversationMembersUpdate,
+
+    // إشعار بإزالة المستخدم من محادثة
+    ConversationRemoved,
+
+    // طلب إرسال رسالة نصية
+    SendMessageRequest,
+
+    // رسالة جديدة تم حفظها وتوزيعها
+    MessageReceived,
+
+    // طلب قائمة محادثات المستخدم
+    GetConversationsRequest,
+
+    // استجابة قائمة المحادثات
+    GetConversationsResponse,
+
+    // طلب سجل رسائل محادثة
+    GetMessagesRequest,
+
+    // استجابة سجل الرسائل
+    GetMessagesResponse,
+
+    // خطأ متعلق بالمراسلة
+    ChatError,
+
+    // تعديل رسالة (للمرسل فقط)
+    EditMessageRequest,
+
+    // حذف رسالة (للمرسل فقط)
+    DeleteMessageRequest,
+
+    // إشعار بأن رسالة عُدِّلت
+    MessageEdited,
+
+    // إشعار بأن رسالة حُذفت
+    MessageDeleted
 }

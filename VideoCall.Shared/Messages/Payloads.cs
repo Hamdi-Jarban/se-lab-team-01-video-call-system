@@ -66,6 +66,77 @@ public record RoomInviteRejectedPayload(Guid InviteId, string RoomId, string Inv
 // بيانات رسالة الخطأ العامة
 public record ErrorPayload(string ErrorCode, string Message);
 
+// ===================== التسجيل والمراسلة الدائمة =====================
+
+// طلب تسجيل حساب جديد (كلمة المرور تُرسل مرة واحدة وتُخزَّن كـ Hash فقط على الخادم)
+public record RegisterRequestPayload(string Username, string Password, string? DisplayName);
+
+// استجابة التسجيل
+public record RegisterResponsePayload(bool Success, string? ErrorCode, string? Username);
+
+// رسالة محادثة محفوظة (المرسل يُحدَّد من قبل الخادم فقط)
+public record ChatMessageDto(long MessageId, int ConversationId, string SenderUsername, string SenderDisplayName, string Content, DateTime SentAtUtc, DateTime? EditedAtUtc = null);
+
+// ملخص محادثة كما يراها مستخدم معين (اسم المحادثة الخاصة = اسم الطرف الآخر)
+public record ConversationDto(int ConversationId, VideoCall.Shared.Models.ConversationType Type, string Name, string CreatedBy, List<string> Members, DateTime? LastMessageAtUtc, string? LastMessagePreview);
+
+// فتح/إنشاء محادثة خاصة
+public record OpenPrivateChatRequestPayload(string Username);
+
+// إشعار بمحادثة (OpenedBy = من طلب الفتح/الإنشاء)
+public record ConversationOpenedPayload(ConversationDto Conversation, string OpenedBy);
+
+// إنشاء مجموعة
+public record CreateGroupRequestPayload(string Name, List<string> MemberUsernames);
+
+// إضافة أعضاء
+public record AddGroupMembersRequestPayload(int ConversationId, List<string> Usernames);
+
+// إزالة عضو (أو مغادرة إذا كان الاسم هو نفس المستخدم)
+public record RemoveGroupMemberRequestPayload(int ConversationId, string Username);
+
+// جلب الأعضاء
+public record GetGroupMembersRequestPayload(int ConversationId);
+
+// أعضاء المحادثة الحاليون
+public record ConversationMembersPayload(int ConversationId, List<string> Members);
+
+// إزالة المحادثة من قائمة المستخدم
+public record ConversationRemovedPayload(int ConversationId);
+
+// إرسال رسالة (لا يوجد SenderId: الخادم يحدده من الجلسة)
+public record SendMessageRequestPayload(int ConversationId, string Content);
+
+// رسالة تم حفظها وتوزيعها
+public record MessageReceivedPayload(ChatMessageDto Message);
+
+// طلب قائمة المحادثات
+public record GetConversationsRequestPayload();
+
+// استجابة قائمة المحادثات
+public record GetConversationsResponsePayload(List<ConversationDto> Conversations);
+
+// طلب سجل الرسائل (ترقيم بالصفحات: BeforeMessageId = null يعني أحدث الرسائل)
+public record GetMessagesRequestPayload(int ConversationId, long? BeforeMessageId, int Limit);
+
+// استجابة سجل الرسائل (مرتبة من الأقدم إلى الأحدث)
+public record GetMessagesResponsePayload(int ConversationId, List<ChatMessageDto> Messages, bool HasMore);
+
+// تعديل رسالة (الخادم يتحقق أن المستخدم هو صاحب الرسالة)
+public record EditMessageRequestPayload(int ConversationId, long MessageId, string Content);
+
+// حذف رسالة
+public record DeleteMessageRequestPayload(int ConversationId, long MessageId);
+
+// إشعار تعديل
+public record MessageEditedPayload(int ConversationId, long MessageId, string Content, DateTime EditedAtUtc);
+
+// إشعار حذف
+public record MessageDeletedPayload(int ConversationId, long MessageId);
+
+// خطأ المراسلة
+public record ChatErrorPayload(string ErrorCode, string Message);
+
 // تعريف رموز الأخطاء المستخدمة بشكل مشترك بين أجزاء النظام
 public static class ErrorCodes
 {
@@ -116,4 +187,40 @@ public static class ErrorCodes
 
     // رمز يدل على حدوث خطأ غير متوقع
     public const string UnexpectedError = "UNEXPECTED_ERROR";
+
+    // اسم المستخدم مستخدم مسبقًا
+    public const string UsernameAlreadyExists = "USERNAME_ALREADY_EXISTS";
+
+    // اسم مستخدم غير صالح
+    public const string InvalidUsername = "INVALID_USERNAME";
+
+    // كلمة مرور ضعيفة/غير صالحة
+    public const string WeakPassword = "WEAK_PASSWORD";
+
+    // يجب تسجيل الدخول أولًا
+    public const string NotAuthenticated = "NOT_AUTHENTICATED";
+
+    // المحادثة غير موجودة
+    public const string ConversationNotFound = "CONVERSATION_NOT_FOUND";
+
+    // المستخدم ليس عضوًا في المحادثة
+    public const string NotConversationMember = "NOT_CONVERSATION_MEMBER";
+
+    // العملية تتطلب مدير المجموعة
+    public const string NotGroupAdmin = "NOT_GROUP_ADMIN";
+
+    // محتوى الرسالة غير صالح
+    public const string InvalidMessage = "INVALID_MESSAGE";
+
+    // طلب غير صالح
+    public const string InvalidRequest = "INVALID_REQUEST";
+
+    // الرسالة غير موجودة أو ليست لك
+    public const string MessageNotFound = "MESSAGE_NOT_FOUND";
+
+    // محاولات دخول كثيرة
+    public const string TooManyAttempts = "TOO_MANY_ATTEMPTS";
+
+    // قاعدة البيانات غير متاحة
+    public const string DatabaseUnavailable = "DATABASE_UNAVAILABLE";
 }

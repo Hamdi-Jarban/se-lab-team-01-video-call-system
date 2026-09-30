@@ -63,6 +63,9 @@ public sealed class ClientSession : IClientHandler, IAsyncDisposable
     /// </summary>
     public string? Username { get; private set; }
 
+    // معرّف المستخدم في SQL (0 = غير مصادَق عليه)
+    public int UserId { get; private set; }
+
     /// <summary>
     /// يحدد ما إذا كان المستخدم قد اجتاز مرحلة المصادقة.
     /// </summary>
@@ -109,6 +112,17 @@ public sealed class ClientSession : IClientHandler, IAsyncDisposable
     /// يربط الجلسة باسم المستخدم بعد نجاح التحقق من بيانات الدخول.
     /// </summary>
     /// <param name="username">اسم المستخدم الذي تمت مصادقته.</param>
+    public void SetAuthenticatedUser(int userId, string username)
+    {
+        if (userId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(userId));
+        }
+
+        SetAuthenticatedUsername(username);
+        UserId = userId;
+    }
+
     public void SetAuthenticatedUsername(string username)
     {
         if (string.IsNullOrWhiteSpace(username))
