@@ -16,9 +16,8 @@ public sealed class SqlCallRepository : ICallRepository
     {
         await using var connection = await _factory.OpenAsync(ct);
         await using var command = SqlHelpers
-            .Command(connection, @"
-INSERT INTO dbo.Calls (CallId, ConversationId, RoomId, StartedByUserId, CallType, Status)
-VALUES (@id, @cid, @room, @uid, @type, @status)")
+            .Command(connection, @"INSERT INTO dbo.Calls (CallId, ConversationId, RoomId, StartedByUserId, CallType, Status)
+                                 VALUES (@id, @cid, @room, @uid, @type, @status)")
             .With("@id", callId)
             .With("@cid", conversationId)
             .With("@room", roomId)
